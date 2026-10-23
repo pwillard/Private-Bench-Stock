@@ -1,0 +1,9 @@
+[Unit]
+Description=Daily ecDB database backup
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target

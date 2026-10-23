@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Reference files{% endblock %}
+{% block content %}
+<h1>Reference files</h1>
+<p>Upload datasheets, application notes and part images. They can then be picked by name on the component form.</p>
+
+<form class="globalForms uploadForm" method="post" enctype="multipart/form-data">
+  {{ csrf() }}
+  <div class="dropZone" id="dropZone">
+    <span class="fa fa-cloud-upload fa-3x"></span>
+    <p>Drop files here or <label class="linkLike">choose files<input type="file" name="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.webp" hidden></label></p>
+    <p class="dim small" id="fileList">PDF → sheets/ (or appnotes/) · JPG/PNG/GIF/WEBP → img/parts/</p>
+  </div>
+  <label class="check"><input type="checkbox" name="appnote" value="1"> Upload PDFs as <b>application notes</b> instead of datasheets</label>
+  <div class="buttons"><button class="button green" type="submit"><span class="fa fa-upload fa-lg"></span> Upload</button></div>
+</form>
+
+<div class="message orange">File names are kept exactly as uploaded. Upper/lower case matters on the server, and existing files are never overwritten.</div>
+
+<table class="globalTables leftAlign noHover compact">
+  <thead><tr><th>Folder</th><th>Contents</th><th class="num">Files</th></tr></thead>
+  <tbody>
+  {% for field, f in folders.items() %}
+    <tr><td><code>{{ f[1] }}/</code></td><td>{{ f[3] }}</td><td class="num">{{ counts[field] }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p><a href="{{ url_for('files.audit') }}">Check database references against these folders →</a></p>
+{% endblock %}

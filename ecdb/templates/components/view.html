@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_macros.html" import dash, check, qty_buttons, csrf %}
+{% block title %}{{ c.name }}{% endblock %}
+{% block content %}
+<h2 class="crumbs">
+  <a href="{{ url_for('components.category', cat_id=c.category_id) }}">{{ c.category_name }}</a> /
+  <a href="{{ url_for('components.subcategory', sid=c.subcategory_id) }}">{{ c.subcategory_name }}</a> /
+  <strong>{{ c.name }}</strong>
+</h2>
+
+<div class="componentLayout">
+  <div class="componentGallery">
+    {% if c.image %}
+      <a href="{{ url_for('files.image', filename=c.image) }}" target="_blank"><img src="{{ url_for('files.image', filename=c.image) }}" alt="{{ c.name }}"></a>
+    {% else %}
+      <div class="componentNoImg"><span class="fa fa-picture-o fa-3x"></span><br>No image</div>
+    {% endif %}
+  </div>
+
+  <div class="componentInfo">
+    <table class="globalTables leftAlign noHover details">
+      <tr><th>Quantity</th><td><span class="big {{ 'zero' if not c.quantity }}">{{ c.quantity|num }}</span> {{ qty_buttons(c, 'quantity', request.path) }}</td>
+          <th>To order</th><td><span class="big">{{ c.order_quantity|num }}</span> {{ qty_buttons(c, 'order_quantity', request.path) }}</td></tr>
+      <tr><th>Location</th><td>{{ dash(c.location) }}</td>
+          <th>Price</th><td>{% if c.price is not none %}{{ c.price|price }} {{ g.user.currency }}{% else %}<span class="dim">–</span>{% endif %}</td></tr>
+      <tr><th>Manufacturer</th><td>{{ dash(c.manufacturer) }}</td>
+          <th>Package</th><td>{{ dash(c.package) }}</td></tr>
+      <tr><th>Pins</th><td>{{ dash(c.pins) }}</td>
+          <th>SMD / Recycled</th><td>{{ check(c.smd) }} SMD &nbsp; {{ check(c.scrap) }} Recycled</td></tr>
+      <tr><th>Datasheet</th><td>{% if c.datasheet %}<a href="{{ url_for('files.sheet', filename=c.datasheet) }}" target="_blank"><span class="fa fa-file-pdf-o fa-lg"></span> {{ c.datasheet }}</a>{% else %}<span class="dim">–</span>{% endif %}</td>
+          <th>Application note</th><td>{% if c.appnote %}<a href="{{ url_for('files.appnote', filename=c.appnote) }}" target="_blank"><span class="fa fa-file-pdf-o fa-lg"></span> {{ c.appnote }}</a>{% else %}<span class="dim">–</span>{% endif %}</td></tr>
+      {% if projects %}
+      <tr><th>Projects</th><td colspan="3">{% for p in projects %}<a class="tag" href="{{ url_for('projects.show', pid=p.id) }}">{{ p.name }} × {{ p.quantity|num }}</a> {% endfor %}</td></tr>
+      {% endif %}
+    </table>
+    {% if c.comment %}<div class="componentComment">{{ c.comment }}</div>{% endif %}
+    <p class="dim small">{% if c.created_at %}Added {{ c.created_at[:10] }}{% endif %}
+      {% if c.updated_at and c.updated_at != c.created_at %} · last changed {{ c.updated_at[:16] }} (UTC){% endif %}</p>
+  </div>
+</div>
+
+<div class="buttons">
+  <a class="button" href="{{ url_for('components.edit', cid=c.id) }}"><span class="fa fa-pencil fa-lg"></span> Edit</a>
+  <a class="button" href="{{ url_for('components.add', based=c.id) }}"><span class="fa fa-clone fa-lg"></span> New based on this</a>
+  <form class="inline" method="post" action="{{ url_for('components.delete', cid=c.id) }}" data-confirm="Delete {{ c.name }}? This cannot be undone.">
+    {{ csrf() }}<button class="button red" type="submit"><span class="fa fa-trash fa-lg"></span> Delete</button>
+  </form>
+</div>
+{% endblock %}

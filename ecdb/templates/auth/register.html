@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="loginWrapper">
+  <form class="globalForms loginForm" method="post">
+    {{ csrf() }}
+    <label>First name <input name="firstname" required value="{{ form.get('firstname', '') }}"></label>
+    <label>Last name <input name="lastname" required value="{{ form.get('lastname', '') }}"></label>
+    <label>Username <input name="login" required autocomplete="username" value="{{ form.get('login', '') }}"></label>
+    <label>E-mail <input name="email" type="email" value="{{ form.get('email', '') }}"></label>
+    <label>Password <input name="newpass" type="password" required minlength="8" autocomplete="new-password"></label>
+    <label>Repeat password <input name="confirmpass" type="password" required autocomplete="new-password"></label>
+    <div class="buttons"><button class="button green" type="submit">Register</button></div>
+  </form>
+</div>
+{% endblock %}

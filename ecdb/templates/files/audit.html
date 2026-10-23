@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Reference audit{% endblock %}
+{% block content %}
+<h1>Reference file audit</h1>
+<p>Checks the datasheet, application note and image names stored on your components against the files on disk. Read-only: nothing is renamed, moved or deleted.</p>
+
+<table class="globalTables noHover compact">
+  <thead><tr><th>Field</th><th>Folder</th><th>Folder OK</th><th class="num">References</th><th class="num">Exact</th>
+    <th class="num">Case mismatch</th><th class="num">Missing</th><th class="num">Ambiguous</th><th class="num">Unreferenced files</th><th class="num">Duplicate-case files</th></tr></thead>
+  <tbody>
+  {% for s in summaries %}
+    <tr><td>{{ s.field }}</td><td><code>{{ s.folder }}/</code></td><td>{{ 'Yes' if s.exists else 'NO' }}</td>
+      <td class="num">{{ s.references }}</td><td class="num">{{ s.exact }}</td>
+      <td class="num {{ 'bad' if s.case }}">{{ s.case }}</td><td class="num {{ 'bad' if s.missing }}">{{ s.missing }}</td>
+      <td class="num {{ 'bad' if s.ambiguous }}">{{ s.ambiguous }}</td><td class="num">{{ s.unreferenced }}</td>
+      <td class="num {{ 'bad' if s.duplicates }}">{{ s.duplicates }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<div class="listHeader">
+  <h2>Issues</h2>
+  <span>
+    {% if show == 'problems' %}<a href="?show=all">Show unreferenced files too</a>{% else %}<a href="?show=problems">Show problems only</a>{% endif %}
+    &nbsp; <a class="button white" href="?format=csv"><span class="fa fa-download"></span> Download CSV ({{ total }} rows)</a>
+  </span>
+</div>
+{% if not issues %}
+  <div class="message green">No problems found.</div>
+{% else %}
+<input type="search" class="tableFilter" data-table="auditIssues" placeholder="Filter issues…">
+<div class="tableWrap">
+<table class="globalTables leftAlign" id="auditIssues">
+  <thead><tr><th>Type</th><th>Part</th><th>Field</th><th>Database value</th><th>Actual file</th><th>Message</th></tr></thead>
+  <tbody>
+  {% for i in issues %}
+    <tr><td><code>{{ i.type }}</code></td>
+      <td>{% if i.id %}<a href="{{ url_for('components.edit', cid=i.id) }}">{{ i.name }}</a>{% else %}<span class="dim">–</span>{% endif %}</td>
+      <td>{{ i.field }}</td><td>{{ i.db_value or '–' }}</td><td>{{ i.actual or '–' }}</td><td>{{ i.message }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

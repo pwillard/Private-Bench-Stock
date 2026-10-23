@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "_macros.html" import th, dash, check, image_cell, sheet_cell, comment_cell %}
+{% block title %}{{ title }}{% endblock %}
+{% block search_autofocus %}{% if not is_search %}autofocus{% endif %}{% endblock %}
+{% block content %}
+<div class="subMenu">
+  <ul>
+    <li><a href="{{ url_for('components.index') }}" class="{{ 'selected' if request.endpoint == 'components.index' else 'isComponents' }}">All</a></li>
+    {% for cat in cats %}
+    <li><a href="{{ url_for('components.category', cat_id=cat.id) }}"
+           class="{{ 'selected' if cat.id == active_cat else ('isComponents' if cat.n else 'empty') }}">{{ cat.name }}{% if cat.n %} <small>{{ cat.n }}</small>{% endif %}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% if subs %}
+<div class="subSubMenu">
+  <ul>
+    {% for s in subs %}
+    <li><a href="{{ url_for('components.subcategory', sid=s.id) }}"
+           class="{{ 'selected' if s.id == active_sub else ('isComponents' if s.n else 'empty') }}">{{ s.name }}{% if s.n %} <small>{{ s.n }}</small>{% endif %}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="listHeader">
+  <h1>{{ title }} <small>{{ rows|length }} item{{ '' if rows|length == 1 else 's' }}</small></h1>
+  {% if rows|length > 10 %}
+  <input type="search" class="tableFilter" data-table="components" placeholder="Filter this list…">
+  {% endif %}
+  {% if request.endpoint == 'components.index' %}
+  <a class="button white" href="{{ url_for('components.export_csv') }}"><span class="fa fa-download"></span> Export CSV</a>
+  {% endif %}
+</div>
+
+{% if is_search and not q %}
+  <div class="message orange">You forgot to enter a search term.</div>
+{% elif not rows %}
+  <div class="message orange">{% if is_search %}Nothing matches “{{ q }}”.{% else %}No components here yet. <a href="{{ url_for('components.add') }}">Add one</a>.{% endif %}</div>
+{% else %}
+<div class="tableWrap">
+<table class="globalTables" id="components">
+  <thead>
+    <tr>
+      <th class="edit"></th>
+      {{ th('Name', 'name') }}
+      {{ th('Category', 'category') }}
+      {{ th('Manufacturer', 'manufacturer', 'hideNarrow') }}
+      {{ th('Package', 'package') }}
+      {{ th('Pins', 'pins', 'num') }}
+      <th>Image</th>
+      <th>Datasheet</th>
+      {{ th('SMD', 'smd') }}
+      {{ th('Price', 'price', 'num') }}
+      {{ th('Qty', 'quantity', 'num') }}
+      {{ th('Location', 'location', 'hideNarrow') }}
+      <th>Comment</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for c in rows %}
+    <tr>
+      <td class="edit"><a href="{{ url_for('components.edit', cid=c.id) }}" title="Edit"><span class="fa fa-pencil fa-lg"></span></a></td>
+      <td class="name"><a href="{{ url_for('components.view', cid=c.id) }}">{{ c.name }}</a></td>
+      <td><a href="{{ url_for('components.subcategory', sid=c.subcategory_id) }}" title="{{ c.category_name }} / {{ c.subcategory_name }}">{{ c.subcategory_name }}</a>
+          <span class="dim small">{{ c.category_name }}</span></td>
+      <td class="hideNarrow">{{ dash(c.manufacturer) }}</td>
+      <td>{{ dash(c.package) }}</td>
+      <td class="num">{{ dash(c.pins) }}</td>
+      <td>{{ image_cell(c) }}</td>
+      <td>{{ sheet_cell(c) }}</td>
+      <td>{{ check(c.smd) }}</td>
+      <td class="num">{{ dash(c.price|price) }}</td>
+      <td class="num {{ 'zero' if not c.quantity }}">{{ c.quantity|num }}</td>
+      <td class="hideNarrow">{{ dash(c.location) }}</td>
+      {{ comment_cell(c) }}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

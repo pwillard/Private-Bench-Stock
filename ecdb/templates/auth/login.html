@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="loginWrapper">
+  <div class="aboutECDB">
+    Your own inventory of electronic components: what you have, where it is and how many.
+    Add your components, search to find them, then use them!
+  </div>
+  <form class="globalForms loginForm" method="post">
+    {{ csrf() }}
+    <label>Username <input name="login" autocomplete="username" required autofocus value="{{ request.form.get('login', '') }}"></label>
+    <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+    <div class="buttons"><button class="button green" type="submit"><span class="fa fa-key fa-lg"></span> Login</button></div>
+  </form>
+</div>
+{% endblock %}

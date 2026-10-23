@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Error {{ error.code }}{% endblock %}
+{% block content %}
+<div class="message red">
+  {% if error.code == 404 %}Not found: that page or component does not exist (or isn't yours).
+  {% else %}{{ error.description }}{% endif %}
+</div>
+<p><a href="{{ url_for('components.index') }}">← Back to my components</a></p>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_macros.html" import th, dash, check, csrf %}
+{% block title %}{{ project.name }}{% endblock %}
+{% block content %}
+<div class="listHeader">
+  <h1><a href="{{ url_for('projects.list_projects') }}">Projects</a> / {{ project.name }} <small>{{ rows|length }} component{{ '' if rows|length == 1 else 's' }}</small></h1>
+</div>
+
+{% if not rows %}
+  <div class="message orange">No components in this project yet. Open a component’s <b>Edit</b> page and use “Add to project”.</div>
+{% else %}
+<div class="tableWrap">
+<table class="globalTables">
+  <thead><tr>
+    <th class="edit"></th>
+    {{ th('Name', 'name') }}{{ th('Category', 'category') }}{{ th('Manufacturer', 'manufacturer') }}
+    {{ th('Package', 'package') }}{{ th('SMD', 'smd') }}{{ th('Price', 'price', 'num') }}
+    {{ th('In stock', 'quantity', 'num') }}{{ th('Needed', 'needed', 'num') }}<th class="num">Line total</th><th></th>
+  </tr></thead>
+  <tbody>
+  {% for c in rows %}
+    <tr class="{{ 'short' if c.quantity < c.needed }}">
+      <td class="edit"><a href="{{ url_for('components.edit', cid=c.id) }}"><span class="fa fa-pencil fa-lg"></span></a></td>
+      <td class="name"><a href="{{ url_for('components.view', cid=c.id) }}">{{ c.name }}</a></td>
+      <td>{{ c.subcategory_name }} <span class="dim small">{{ c.category_name }}</span></td>
+      <td>{{ dash(c.manufacturer) }}</td>
+      <td>{{ dash(c.package) }}</td>
+      <td>{{ check(c.smd) }}</td>
+      <td class="num">{{ dash(c.price|price) }}</td>
+      <td class="num">{{ c.quantity|num }}{% if c.quantity < c.needed %} <span class="badge red" title="Short by {{ (c.needed - c.quantity)|num }}">short</span>{% endif %}</td>
+      <td class="num"><b>{{ c.needed|num }}</b></td>
+      <td class="num">{% if c.price is not none %}{{ (c.price * c.needed)|price }}{% else %}<span class="dim">–</span>{% endif %}</td>
+      <td><form class="inline" method="post" action="{{ url_for('projects.remove_component', pid=project.id, cid=c.id) }}" data-confirm="Remove {{ c.name }} from this project?">{{ csrf() }}<button class="linkButton" title="Remove from project"><span class="fa fa-times"></span></button></form></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<div class="totalSumWrapper">Total: <b>{{ total|price }} {{ g.user.currency }}</b></div>
+{% endif %}
+
+<div class="projectTools">
+  {% if rows %}
+  <form class="inline" method="post" action="{{ url_for('projects.order_shortfall', pid=project.id) }}">
+    {{ csrf() }}<button class="button" type="submit"><span class="fa fa-shopping-basket fa-lg"></span> Put missing parts on the shopping list</button>
+  </form>
+  {% endif %}
+  <form class="inline globalForms inlineForm" method="post" action="{{ url_for('projects.rename', pid=project.id) }}">
+    {{ csrf() }}<input name="name" value="{{ project.name }}" required maxlength="100">
+    <button class="button white" type="submit"><span class="fa fa-pencil"></span> Rename</button>
+  </form>
+  <form class="inline" method="post" action="{{ url_for('projects.delete', pid=project.id) }}" data-confirm="Delete project {{ project.name }}? The components themselves are kept.">
+    {{ csrf() }}<button class="button red" type="submit"><span class="fa fa-trash fa-lg"></span> Delete project</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{# Reusable bits #}
+
+{% macro csrf() %}<input type="hidden" name="_csrf" value="{{ csrf_token() }}">{% endmacro %}
+
+{% macro th(label, column, cls='') -%}
+<th class="{{ cls }}"><a href="{{ sort_url(column) }}">{{ label }} <span class="fa {{ sort_icon(column) or 'fa-sort dim' }}"></span></a></th>
+{%- endmacro %}
+
+{% macro dash(value) %}{% if value is none or value == '' %}<span class="dim">–</span>{% else %}{{ value }}{% endif %}{% endmacro %}
+
+{% macro check(flag) %}<span class="fa {{ 'fa-check-square-o' if flag else 'fa-square-o dim' }} fa-lg"></span>{% endmacro %}
+
+{% macro image_cell(c) -%}
+{% if c.image %}<a class="thumbnail" href="{{ url_for('files.image', filename=c.image) }}" target="_blank"><span class="fa fa-file-image-o fa-lg"></span><span class="imgB"><img data-src="{{ url_for('files.image', filename=c.image) }}" alt=""></span></a>
+{% else %}<span class="dim">–</span>{% endif %}
+{%- endmacro %}
+
+{% macro sheet_cell(c) -%}
+{% if c.datasheet %}<a href="{{ url_for('files.sheet', filename=c.datasheet) }}" target="_blank" title="{{ c.datasheet }}"><span class="fa fa-file-pdf-o fa-lg"></span></a>
+{% else %}<span class="dim">–</span>{% endif %}
+{%- endmacro %}
+
+{% macro comment_cell(c) -%}
+<td class="comment">{% if c.comment %}<span class="fa fa-comment fa-lg"></span><span class="commentText">{{ c.comment }}</span>{% else %}<span class="dim">–</span>{% endif %}</td>
+{%- endmacro %}
+
+{% macro qty_buttons(c, field, back) -%}
+<form class="inline qty" method="post" action="{{ url_for('components.adjust', cid=c.id) }}">
+  {{ csrf() }}<input type="hidden" name="field" value="{{ field }}"><input type="hidden" name="back" value="{{ back }}">
+  <button class="button white small" name="delta" value="1" title="Add one"><span class="fa fa-plus"></span></button>
+  <button class="button white small" name="delta" value="-1" title="Remove one"><span class="fa fa-minus"></span></button>
+</form>
+{%- endmacro %}

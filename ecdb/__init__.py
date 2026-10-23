@@ -1,0 +1,138 @@
+"""ecDB - electronic components database (Flask + SQLite)."""
+import datetime
+import os
+import secrets
+from pathlib import Path
+
+from flask import Flask, g, redirect, render_template, request, session, url_for
+
+from . import db
+from .security import check_csrf, csrf_token
+
+__version__ = "2.0.0"
+
+
+def _load_secret_key(instance_path):
+    key_file = Path(instance_path) / "secret_key"
+    if not key_file.exists():
+        key_file.write_text(secrets.token_hex(32), encoding="utf-8")
+        try:
+            os.chmod(key_file, 0o600)
+        except OSError:
+            pass
+    return key_file.read_text(encoding="utf-8").strip()
+
+
+def create_app(test_config=None):
+    app = Flask(__name__, instance_relative_config=True)
+    os.makedirs(app.instance_path, exist_ok=True)
+
+    app.config.from_mapping(
+        DATABASE=os.path.join(app.instance_path, "ecdb.sqlite3"),
+        # Folder holding sheets/, appnotes/ and img/parts/ (same layout as the old site)
+        MEDIA_ROOT=os.path.join(app.instance_path, "media"),
+        ALLOW_REGISTRATION=False,
+        MAX_CONTENT_LENGTH=150 * 1024 * 1024,
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 14,
+        CURRENCIES=["USD", "EUR", "GBP", "SEK", "CAD", "AUD"],
+    )
+    if test_config is None:
+        # Optional overrides: instance/config.py, then ECDB_* environment variables
+        app.config.from_pyfile("config.py", silent=True)
+        app.config.from_prefixed_env("ECDB")
+    else:
+        app.config.from_mapping(test_config)
+    if not app.config.get("SECRET_KEY"):
+        app.config["SECRET_KEY"] = _load_secret_key(app.instance_path)
+
+    media = Path(app.config["MEDIA_ROOT"])
+    app.config.setdefault("SHEETS_DIR", str(media / "sheets"))
+    app.config.setdefault("APPNOTES_DIR", str(media / "appnotes"))
+    app.config.setdefault("IMAGES_DIR", str(media / "img" / "parts"))
+
+    db.init_app(app)
+    if not os.path.exists(app.config["DATABASE"]):
+        db.init_db(app.config["DATABASE"])
+
+    from . import auth, components, files, projects, settings
+    for bp in (auth.bp, components.bp, projects.bp, settings.bp, files.bp):
+        app.register_blueprint(bp)
+
+    @app.before_request
+    def load_user_and_check_csrf():
+        check_csrf()
+        uid = session.get("user_id")
+        g.user = db.query("SELECT * FROM user WHERE id = ?", (uid,), one=True) if uid else None
+        if uid and g.user is None:
+            session.clear()
+
+    @app.after_request
+    def security_headers(resp):
+        resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+        resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        resp.headers.setdefault("Referrer-Policy", "same-origin")
+        return resp
+
+    @app.context_processor
+    def inject_globals():
+        stats = None
+        if g.get("user") is not None:
+            stats = db.query(
+                "SELECT (SELECT COUNT(*) FROM component WHERE owner_id = :u) AS components,"
+                " (SELECT COUNT(*) FROM project WHERE owner_id = :u) AS projects",
+                {"u": g.user["id"]}, one=True)
+        return {"stats": stats, "version": __version__,
+                "year": datetime.date.today().year,
+                "allow_registration": app.config["ALLOW_REGISTRATION"]}
+
+    from .formatting import register_filters
+    register_filters(app)
+    app.jinja_env.globals["csrf_token"] = csrf_token
+
+    @app.errorhandler(400)
+    @app.errorhandler(403)
+    @app.errorhandler(404)
+    def http_error(err):
+        return render_template("error.html", error=err), err.code
+
+    _register_legacy_redirects(app)
+
+    from .cli import register_cli
+    register_cli(app)
+    return app
+
+
+def _register_legacy_redirects(app):
+    """Old PHP URLs (bookmarks, links in notes) redirect to the new pages."""
+    simple = {
+        "index.php": "components.index", "add.php": "components.add",
+        "shoplist.php": "components.shoplist", "proj_list.php": "projects.list_projects",
+        "my.php": "settings.settings", "maintenance.php": "files.upload",
+        "reference_audit.php": "files.audit", "login.php": "auth.login",
+        "logout.php": "auth.logout",
+    }
+
+    @app.route("/<page>.php")
+    def legacy(page):
+        a = request.args
+        name = page + ".php"
+        if name in simple:
+            return redirect(url_for(simple[name]), 301)
+        if name == "component.php" and a.get("view", "").isdigit():
+            return redirect(url_for("components.view", cid=int(a["view"])), 301)
+        if name == "component_edit.php" and a.get("edit", "").isdigit():
+            return redirect(url_for("components.edit", cid=int(a["edit"])), 301)
+        if name == "add_based.php" and a.get("based", "").isdigit():
+            return redirect(url_for("components.add", based=int(a["based"])), 301)
+        if name == "category.php":
+            if a.get("subcat", "").isdigit():
+                return redirect(url_for("components.subcategory", sid=int(a["subcat"])), 301)
+            if a.get("cat", "").isdigit():
+                return redirect(url_for("components.category", cat_id=int(a["cat"])), 301)
+        if name == "search.php":
+            return redirect(url_for("components.search", q=a.get("q", "")), 301)
+        if name in ("proj_show.php", "proj_edit.php") and a.get("proj_id", "").isdigit():
+            return redirect(url_for("projects.show", pid=int(a["proj_id"])), 301)
+        return redirect(url_for("components.index"))

@@ -1,0 +1,26 @@
+[Unit]
+Description=ecDB electronic components database
+After=network.target
+
+[Service]
+Type=simple
+User=ecdb
+Group=ecdb
+WorkingDirectory=/opt/ecdb
+ExecStart=/opt/ecdb/.venv/bin/python manage.py serve --host 0.0.0.0 --port 8080
+Restart=on-failure
+RestartSec=5
+
+# To serve on port 80 directly (after removing Apache/PHP), change --port to 80
+# and uncomment the next line:
+#AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+# Hardening: the service can only write to its instance folder
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/ecdb/instance
+
+[Install]
+WantedBy=multi-user.target

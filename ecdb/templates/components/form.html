@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}{{ 'Edit ' ~ c.name if mode == 'edit' else 'Add component' }}{% endblock %}
+{% block content %}
+{% if mode == 'edit' %}
+  <h1>Edit <a href="{{ url_for('components.view', cid=c.id) }}">{{ c.name }}</a></h1>
+{% elif based %}
+  <h1>New component based on <a href="{{ url_for('components.view', cid=based.id) }}">{{ based.name }}</a></h1>
+{% else %}
+  <h1>Add new component</h1>
+{% endif %}
+
+<form class="globalForms componentForm" method="post" autocomplete="off">
+  {{ csrf() }}
+  <fieldset>
+    <legend>Part</legend>
+    <label><span>Name <span class="req">*</span></span>
+      <input name="name" value="{{ c.name or '' }}" required maxlength="100" data-suggest="name" {% if mode != 'edit' %}autofocus{% endif %}></label>
+    <label><span>Category <span class="req">*</span></span>
+      <select name="subcategory_id" required>
+        <option value="">– Category –</option>
+        {% for group in subs|groupby('category_name') %}
+        <optgroup label="{{ group.grouper }}">
+          {% for s in group.list %}<option value="{{ s.id }}" {{ 'selected' if s.id == c.subcategory_id }}>{{ s.name }}</option>{% endfor %}
+        </optgroup>
+        {% endfor %}
+      </select></label>
+    <label>Manufacturer <input name="manufacturer" value="{{ c.manufacturer or '' }}" data-suggest="manufacturer"></label>
+    <label>Package <input name="package" value="{{ c.package or '' }}" data-suggest="package"></label>
+    <label class="short">Pins <input name="pins" value="{{ c.pins if c.pins is not none else '' }}" inputmode="numeric"></label>
+    <div class="radios">
+      <span>SMD</span>
+      <label><input type="radio" name="smd" value="1" {{ 'checked' if c.smd }}> Yes</label>
+      <label><input type="radio" name="smd" value="0" {{ 'checked' if not c.smd }}> No</label>
+    </div>
+    <div class="radios">
+      <span>Recycled</span>
+      <label><input type="radio" name="scrap" value="1" {{ 'checked' if c.scrap }}> Yes</label>
+      <label><input type="radio" name="scrap" value="0" {{ 'checked' if not c.scrap }}> No</label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Stock</legend>
+    <label class="short">Quantity <input name="quantity" value="{{ c.quantity|num }}" inputmode="decimal"></label>
+    <label class="short">To order <input name="order_quantity" value="{{ c.order_quantity|num }}" inputmode="decimal"></label>
+    <label class="short">Price ({{ g.user.currency }}) <input name="price" value="{{ c.price|price }}" inputmode="decimal"></label>
+    <label>Location <input name="location" value="{{ c.location or '' }}" data-suggest="location"></label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Reference files <a class="small" href="{{ url_for('files.upload') }}" target="_blank">upload…</a></legend>
+    <label>Datasheet (sheets/) <input name="datasheet" value="{{ c.datasheet or '' }}" data-suggest="datasheet"></label>
+    <label>Image (img/parts/) <input name="image" value="{{ c.image or '' }}" data-suggest="image"></label>
+    <label>Application note (appnotes/) <input name="appnote" value="{{ c.appnote or '' }}" data-suggest="appnote"></label>
+  </fieldset>
+
+  <fieldset class="wide">
+    <legend>Comment</legend>
+    <textarea name="comment" rows="4" maxlength="2500">{{ c.comment or '' }}</textarea>
+  </fieldset>
+
+  <fieldset class="wide">
+    <legend>Projects</legend>
+    {% if linked %}
+      <table class="globalTables leftAlign noHover compact">
+        <tr><th>Project</th><th>Quantity (0 removes)</th></tr>
+        {% for p in linked %}
+        <tr><td><a href="{{ url_for('projects.show', pid=p.id) }}">{{ p.name }}</a></td>
+            <td><input class="small" name="projqty_{{ p.id }}" value="{{ p.quantity|num }}" inputmode="decimal"></td></tr>
+        {% endfor %}
+      </table>
+    {% endif %}
+    {% if projects %}
+      <label>Add to project
+        <select name="project_id">
+          <option value="">– Project –</option>
+          {% for p in projects %}<option value="{{ p.id }}" {{ 'selected' if request.form.get('project_id') == p.id|string }}>{{ p.name }}</option>{% endfor %}
+        </select></label>
+      <label class="short">Quantity <input name="project_quantity" value="{{ request.form.get('project_quantity', '') }}" inputmode="decimal"></label>
+    {% elif not linked %}
+      <p class="dim">No projects yet. <a href="{{ url_for('projects.list_projects') }}">Create one</a> to build a BOM.</p>
+    {% endif %}
+  </fieldset>
+
+  <div class="buttons">
+    {% if mode == 'edit' %}
+      <button class="button green" type="submit"><span class="fa fa-save fa-lg"></span> Update</button>
+      <a class="button" href="{{ url_for('components.add', based=c.id) }}"><span class="fa fa-clone fa-lg"></span> New based on this</a>
+      <a class="button white" href="{{ url_for('components.view', cid=c.id) }}">Cancel</a>
+    {% else %}
+      <button class="button green" type="submit"><span class="fa fa-save fa-lg"></span> Save</button>
+      <button class="button" type="submit" name="again" value="1"><span class="fa fa-plus fa-lg"></span> Save and add another</button>
+    {% endif %}
+  </div>
+</form>
+
+{% if mode == 'edit' %}
+<form method="post" action="{{ url_for('components.delete', cid=c.id) }}" data-confirm="Delete {{ c.name }}? This cannot be undone." class="dangerZone">
+  {{ csrf() }}<button class="button red" type="submit"><span class="fa fa-trash fa-lg"></span> Delete component</button>
+</form>
+{% endif %}
+{% endblock %}

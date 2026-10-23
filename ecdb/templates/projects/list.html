@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Projects{% endblock %}
+{% block content %}
+<h1>Projects</h1>
+<form class="globalForms inlineForm" method="post">
+  {{ csrf() }}
+  <label>New project <input name="name" required maxlength="100" placeholder="Project name"></label>
+  <button class="button green" type="submit"><span class="fa fa-plus fa-lg"></span> Add project</button>
+</form>
+
+{% if not projects %}
+  <div class="message orange">Create a project, then add components to it (from the component’s edit page) to get a BOM (bill of materials) with stock check and total cost.</div>
+{% else %}
+<table class="globalTables">
+  <thead><tr>
+    <th><a href="?order={{ 'desc' if request.args.get('order') != 'desc' else 'asc' }}">Name</a></th>
+    <th class="num">Components</th><th class="num">Short in stock</th><th class="num">Total cost</th>
+  </tr></thead>
+  <tbody>
+  {% for p in projects %}
+    <tr>
+      <td class="name"><a href="{{ url_for('projects.show', pid=p.id) }}">{{ p.name }}</a></td>
+      <td class="num">{{ p.parts or '–' }}</td>
+      <td class="num">{% if p.short %}<span class="badge red">{{ p.short }}</span>{% else %}<span class="dim">–</span>{% endif %}</td>
+      <td class="num">{% if p.total %}{{ p.total|price }} {{ g.user.currency }}{% else %}<span class="dim">–</span>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}
