@@ -5,7 +5,7 @@ Usage:
     python tools/mysql_to_sqlite.py <ecdb.sql> <output.sqlite3> [--force] [--owner ID]
 
 Reads only the INSERT statements of the dump (no MySQL server needed), maps the
-old tables onto the new schema (ecdb/schema.sql) and prints a report of every
+old tables onto the new schema (benchstock/schema.sql) and prints a report of every
 value it had to clean up. The source dump is never modified.
 
 Old table        -> new table
@@ -15,7 +15,7 @@ data             -> component          (only the parts of ONE member, see below)
 projects         -> project
 projects_data    -> project_component
 members.currency -> setting "currency"
-members, members_stats: not imported (the new ecDB has no user accounts)
+members, members_stats: not imported (BenchStock has no user accounts)
 
 The old site was multi-user. The new one is a single-user tool, so only one
 member's parts and projects are imported: --owner ID, or by default the member
@@ -28,7 +28,7 @@ import sqlite3
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SCHEMA = os.path.join(HERE, "..", "ecdb", "schema.sql")
+SCHEMA = os.path.join(HERE, "..", "benchstock", "schema.sql")
 
 INSERT_RE = re.compile(r"INSERT INTO `(\w+)` \(([^)]*)\) VALUES\s*", re.I)
 ESCAPES = {"0": "\0", "n": "\n", "r": "\r", "t": "\t", "Z": "\x1a", "b": "\b"}

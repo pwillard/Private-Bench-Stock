@@ -6,7 +6,7 @@ import sys
 import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from ecdb import create_app  # noqa: E402
+from benchstock import create_app  # noqa: E402
 
 
 @pytest.fixture

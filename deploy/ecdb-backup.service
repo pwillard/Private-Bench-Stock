@@ -1,8 +1,0 @@
-[Unit]
-Description=Daily ecDB database backup
-
-[Service]
-Type=oneshot
-User=ecdb
-WorkingDirectory=/opt/ecdb
-ExecStart=/opt/ecdb/.venv/bin/python manage.py backup --keep 30

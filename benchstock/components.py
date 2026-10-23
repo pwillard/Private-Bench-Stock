@@ -129,7 +129,7 @@ def export_csv():
     for r in rows:
         w.writerow([r[c] if r[c] is not None else "" for c in cols])
     return Response("\ufeff" + buf.getvalue(), mimetype="text/csv",
-                    headers={"Content-Disposition": "attachment; filename=ecdb_components.csv"})
+                    headers={"Content-Disposition": "attachment; filename=benchstock_components.csv"})
 
 
 # --- single component ------------------------------------------------------

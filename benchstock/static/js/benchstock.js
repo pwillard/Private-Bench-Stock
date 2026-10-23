@@ -1,4 +1,4 @@
-// ecDB front-end helpers (no dependencies)
+// BenchStock front-end helpers (no dependencies)
 (function () {
   "use strict";
 

@@ -1,6 +1,8 @@
-# ecDB 2 (Python/Flask + SQLite)
+# BenchStock
 
-A rewrite of the ecDB PHP/MySQL site, which lives in `..\html`. It keeps all of your data
+*Your parts. Your datasheets. Your workbench.*
+
+A personal electronic-components inventory (Python/Flask + SQLite). It replaces the old ecDB PHP/MySQL site, which lives in `..\html`. It keeps all of your data
 (parts, categories, projects), the datasheet, appnote and image folders, and the general look of
 the old site. There is no PHP and no MySQL server any more.
 
@@ -10,7 +12,7 @@ plans for a public web service.
 
 ## What's in the box
 
-    ecdb/               the application (Flask)
+    benchstock/               the application (Flask)
       schema.sql        database layout (SQLite)
       templates/        HTML pages
       static/           CSS, JS, fonts, logo
@@ -22,7 +24,7 @@ plans for a public web service.
 
 Everything that belongs to *your* installation lives in `instance/`. Code updates never touch it.
 
-    instance/ecdb.sqlite3          the database
+    instance/benchstock.sqlite3          the database
     instance/media/sheets/         datasheets       (served at /sheets/...)
     instance/media/appnotes/       application notes (/appnotes/...)
     instance/media/img/parts/      part images       (/img/parts/...)
@@ -31,7 +33,7 @@ Everything that belongs to *your* installation lives in `instance/`. Code update
 
 ## Install on the Raspberry Pi
 
-1. Copy this `app` folder to the Pi (e.g. `scp -r app pi@raspberrypi:~/ecdb-app`).
+1. Copy this `app` folder to the Pi (e.g. `scp -r app pi@raspberrypi:~/benchstock-app`).
    Also copy `ecdb.sql` if the old site is on a different machine.
 2. `..\html\ecdb.sql` is the current dump. Only if you edit data on the old site before
    switching over, make a new one:
@@ -40,11 +42,11 @@ Everything that belongs to *your* installation lives in `instance/`. Code update
 
 3. Install, import the dump and copy the reference files from the old web root:
 
-       cd ~/ecdb-app
+       cd ~/benchstock-app
        sudo bash deploy/install_pi.sh --dump ~/ecdb.sql --files /var/www/html --port 8080
 
-   This sets up `/opt/ecdb`, a Python virtual environment, a locked-down `ecdb` service user,
-   the `ecdb` systemd service (starts at boot) and a daily database backup timer.
+   This sets up `/opt/benchstock`, a Python virtual environment, a locked-down `benchstock` service user,
+   the `benchstock` systemd service (starts at boot) and a daily database backup timer.
 4. Open `http://<pi-address>:8080/`.
 
    The importer brings in the parts and projects of one old member (by default the one with
@@ -60,14 +62,14 @@ again, with no options. The database and files are kept.
 
 ## Admin commands
 
-Run these on the Pi from `/opt/ecdb`, as the service user:
+Run these on the Pi from `/opt/benchstock`, as the service user:
 
-    cd /opt/ecdb
-    sudo -u ecdb .venv/bin/python manage.py backup                    # manual backup
-    sudo journalctl -u ecdb -f                                        # server log
+    cd /opt/benchstock
+    sudo -u benchstock .venv/bin/python manage.py backup                    # manual backup
+    sudo journalctl -u benchstock -f                                        # server log
 
-Restoring a backup: `sudo systemctl stop ecdb`, copy the backup file over
-`instance/ecdb.sqlite3`, delete any `ecdb.sqlite3-wal` / `-shm` files, then `sudo systemctl start ecdb`.
+Restoring a backup: `sudo systemctl stop benchstock`, copy the backup file over
+`instance/benchstock.sqlite3`, delete any `benchstock.sqlite3-wal` / `-shm` files, then `sudo systemctl start benchstock`.
 
 ## Run on Windows (testing)
 
@@ -129,7 +131,7 @@ user table and login history). The unused "measurement system" preference is gon
 - Security headers are set. No database password is stored anywhere.
 - Access control is your network. To limit who can reach it, firewall port 8080 on the Pi
   (e.g. `sudo ufw allow from 192.168.1.0/24 to any port 8080`), or change `--host 0.0.0.0`
-  to `--host 127.0.0.1` in `/etc/systemd/system/ecdb.service` to allow only the Pi itself.
+  to `--host 127.0.0.1` in `/etc/systemd/system/benchstock.service` to allow only the Pi itself.
 
 ## Development
 

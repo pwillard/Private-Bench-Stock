@@ -1,4 +1,4 @@
--- ecDB SQLite schema (single user, no accounts)
+-- BenchStock SQLite schema (single user, no accounts)
 -- Category ids keep the original ecDB numbering: subcategory id = category id * 100 + n
 -- (e.g. 1204 = Transistor / NPN), so old links and the imported data stay valid.
 

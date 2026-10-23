@@ -1,4 +1,4 @@
-/* ecDB 2 - keeps the original look (slate bar, green category chips, Abel font), cleaned up and responsive */
+/* BenchStock - keeps the original ecDB look (slate bar, green category chips, Abel font), cleaned up and responsive */
 @font-face {
   font-family: "Abel";
   src: url("../fonts/abel-regular-webfont.woff") format("woff"),
@@ -46,7 +46,12 @@ code { font-size: 0.9em; background: #f0f1f3; padding: 0 4px; border-radius: 3px
 
 /* Header */
 #header { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; padding: 14px 0 10px; }
-#header .logo img { width: 180px; height: auto; display: block; }
+#header .logo { display: flex; align-items: center; gap: 10px; color: #3d4757; text-decoration: none; }
+#header .logo img { width: 52px; height: 52px; display: block; }
+#header .logo .brand { display: flex; flex-direction: column; line-height: 1.1; }
+#header .logo .name { font-size: 2rem; letter-spacing: 0.5px; }
+#header .logo .name b { color: var(--green-dark); font-weight: normal; }
+#header .logo .tagline { font-size: 0.85rem; color: var(--slate); font-style: italic; }
 #header .search { flex: 1 1 280px; max-width: 520px; margin-left: auto; position: relative; }
 #header .search .fa { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--dim); }
 #header .search input {
@@ -190,7 +195,6 @@ label.check { display: block; margin: 6px 0; }
 
 /* Login / about */
 .loginWrapper { max-width: 440px; margin: 20px auto; }
-.aboutECDB { color: #555; margin-bottom: 18px; }
 .loginForm label { display: flex; flex-direction: column; gap: 3px; margin-bottom: 12px; }
 .about { max-width: 760px; }
 .about img { border: 1px solid var(--line); margin-right: 10px; }

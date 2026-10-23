@@ -1,4 +1,4 @@
-"""ecDB - electronic components database (Flask + SQLite, single user)."""
+"""BenchStock - electronic components database (Flask + SQLite, single user)."""
 import datetime
 import os
 import secrets
@@ -9,7 +9,8 @@ from flask import Flask, redirect, render_template, request, url_for
 from . import db
 from .security import check_csrf, csrf_token
 
-__version__ = "2.1.0"
+__version__ = "1.0.0"
+TAGLINE = "Your parts. Your datasheets. Your workbench."
 
 
 def _load_secret_key(instance_path):
@@ -28,19 +29,20 @@ def create_app(test_config=None):
     os.makedirs(app.instance_path, exist_ok=True)
 
     app.config.from_mapping(
-        DATABASE=os.path.join(app.instance_path, "ecdb.sqlite3"),
+        DATABASE=os.path.join(app.instance_path, "benchstock.sqlite3"),
         # Folder holding sheets/, appnotes/ and img/parts/ (same layout as the old site)
         MEDIA_ROOT=os.path.join(app.instance_path, "media"),
         MAX_CONTENT_LENGTH=150 * 1024 * 1024,
+        SESSION_COOKIE_NAME="benchstock",
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
         PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 365,
         CURRENCIES=["USD", "EUR", "GBP", "SEK", "CAD", "AUD"],
     )
     if test_config is None:
-        # Optional overrides: instance/config.py, then ECDB_* environment variables
+        # Optional overrides: instance/config.py, then BENCHSTOCK_* environment variables
         app.config.from_pyfile("config.py", silent=True)
-        app.config.from_prefixed_env("ECDB")
+        app.config.from_prefixed_env("BENCHSTOCK")
     else:
         app.config.from_mapping(test_config)
     if not app.config.get("SECRET_KEY"):
@@ -72,7 +74,7 @@ def create_app(test_config=None):
     def inject_globals():
         stats = db.query("SELECT (SELECT COUNT(*) FROM component) AS components,"
                          " (SELECT COUNT(*) FROM project) AS projects", one=True)
-        return {"stats": stats, "version": __version__, "year": datetime.date.today().year,
+        return {"stats": stats, "version": __version__, "year": datetime.date.today().year, "tagline": TAGLINE,
                 "currency": settings.get_setting("currency")}
 
     from .formatting import register_filters

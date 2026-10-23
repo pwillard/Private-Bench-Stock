@@ -1,13 +1,13 @@
 [Unit]
-Description=ecDB electronic components database
+Description=BenchStock electronic components database
 After=network.target
 
 [Service]
 Type=simple
-User=ecdb
-Group=ecdb
-WorkingDirectory=/opt/ecdb
-ExecStart=/opt/ecdb/.venv/bin/python manage.py serve --host 0.0.0.0 --port 8080
+User=benchstock
+Group=benchstock
+WorkingDirectory=/opt/benchstock
+ExecStart=/opt/benchstock/.venv/bin/python manage.py serve --host 0.0.0.0 --port 8080
 Restart=on-failure
 RestartSec=5
 
@@ -20,7 +20,7 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
-ReadWritePaths=/opt/ecdb/instance
+ReadWritePaths=/opt/benchstock/instance
 
 [Install]
 WantedBy=multi-user.target

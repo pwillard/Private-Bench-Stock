@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- BenchStock icon: an IC on the bench -->
+  <g fill="#74839c">
+    <rect x="6" y="14" width="6" height="5" rx="1"/><rect x="6" y="24" width="6" height="5" rx="1"/>
+    <rect x="6" y="34" width="6" height="5" rx="1"/><rect x="6" y="44" width="6" height="5" rx="1"/>
+    <rect x="52" y="14" width="6" height="5" rx="1"/><rect x="52" y="24" width="6" height="5" rx="1"/>
+    <rect x="52" y="34" width="6" height="5" rx="1"/><rect x="52" y="44" width="6" height="5" rx="1"/>
+  </g>
+  <rect x="11" y="8" width="42" height="48" rx="5" fill="#3d4757"/>
+  <circle cx="19" cy="16" r="3" fill="#66b82a"/>
+  <rect x="18" y="27" width="28" height="4" rx="2" fill="#66b82a"/>
+  <rect x="18" y="35" width="20" height="4" rx="2" fill="#9fb0c8"/>
+  <rect x="18" y="43" width="24" height="4" rx="2" fill="#9fb0c8"/>
+</svg>

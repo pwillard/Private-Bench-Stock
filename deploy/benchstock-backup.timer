@@ -1,5 +1,5 @@
 [Unit]
-Description=Daily ecDB database backup
+Description=Daily BenchStock database backup
 
 [Timer]
 OnCalendar=daily

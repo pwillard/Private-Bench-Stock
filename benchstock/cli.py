@@ -36,14 +36,14 @@ def register_cli(app):
         dest_dir = dest_dir or os.path.join(current_app.instance_path, "backups")
         os.makedirs(dest_dir, exist_ok=True)
         stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        target = os.path.join(dest_dir, f"ecdb-{stamp}.sqlite3")
+        target = os.path.join(dest_dir, f"benchstock-{stamp}.sqlite3")
         src = sqlite3.connect(current_app.config["DATABASE"])
         dst = sqlite3.connect(target)
         with dst:
             src.backup(dst)
         src.close()
         dst.close()
-        old = sorted(f for f in os.listdir(dest_dir) if f.startswith("ecdb-") and f.endswith(".sqlite3"))
+        old = sorted(f for f in os.listdir(dest_dir) if f.startswith("benchstock-") and f.endswith(".sqlite3"))
         for f in old[:-keep] if keep > 0 else []:
             os.remove(os.path.join(dest_dir, f))
         click.echo(f"Backup written: {target}")
