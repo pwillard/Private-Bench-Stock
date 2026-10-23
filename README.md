@@ -29,7 +29,8 @@ Everything that belongs to *your* installation lives in `instance/`. Code update
 
 1. Copy this `app` folder to the Pi (e.g. `scp -r app pi@raspberrypi:~/ecdb-app`).
    Also copy `ecdb.sql` if the old site is on a different machine.
-2. Get a fresh dump from the old MySQL server, so it includes your latest changes:
+2. `..\html\ecdb.sql` is the current dump. Only if you edit data on the old site before
+   switching over, make a new one:
 
        mysqldump -u ecdb -p ecdb > ecdb.sql
 
