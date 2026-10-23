@@ -2,13 +2,15 @@
 
 *Your parts. Your datasheets. Your workbench.*
 
-A personal electronic-components inventory (Python/Flask + SQLite). It replaces the old ecDB PHP/MySQL site, which lives in `..\html`. It keeps all of your data
+A personal electronic-components inventory (Python/Flask + SQLite). It replaces the old personal ecDB PHP/MySQL site, which lives in `..\html`. It keeps all of your data
 (parts, categories, projects), the datasheet, appnote and image folders, and the general look of
 the old site. There is no PHP and no MySQL server any more.
 
 It is a single-user tool with no accounts and no login: anyone who can reach it on your
 network can use it. The user system in the old code was left over from the original author's
 plans for a public web service.
+
+
 
 ## What's in the box
 
@@ -72,6 +74,26 @@ The database and files are kept.
 Both phpMyAdmin exports and plain `mysqldump` files work. An empty database (the app creates one
 at first start) is replaced automatically. A dump that contains no parts is rejected, and the
 existing database is left unchanged.
+
+## Off-device backup
+
+The daily snapshot in `instance/backups/` sits on the same SD card as everything else. To keep a
+copy on another machine, run the installer once with `--offsite`:
+
+    sudo bash deploy/install_pi.sh --offsite willard@benchpi.local:/home/willard/backups/benchstock
+    sudo ssh-copy-id -i /root/.ssh/benchstock_offsite.pub willard@benchpi.local   # one time, asks for the password
+    sudo systemctl start benchstock-offsite                                         # test now
+    journalctl -u benchstock-offsite -n 20 --no-pager
+
+Every night at 03:30, `deploy/offsite_backup.sh` copies `instance/` (database snapshots, sheets,
+appnotes, images) with rsync over SSH. The live database file is skipped and today's snapshot
+is sent instead. Nothing is ever deleted on the remote side. The date of the last good run is
+in `LAST_BACKUP_OK` on benchpi. Settings are in `/etc/benchstock-offsite.conf`.
+
+To restore onto a fresh Pi: run the installer, `sudo systemctl stop benchstock`, copy the folder
+back into `/opt/benchstock/instance/`, copy the newest `backups/benchstock-*.sqlite3` to
+`instance/benchstock.sqlite3`, `sudo chown -R benchstock:benchstock /opt/benchstock/instance`,
+then `sudo systemctl start benchstock`.
 
 ## Admin commands
 

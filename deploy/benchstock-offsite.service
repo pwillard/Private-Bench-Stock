@@ -1,0 +1,8 @@
+[Unit]
+Description=Private Bench Stock off-device backup (rsync over SSH)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/benchstock/deploy/offsite_backup.sh

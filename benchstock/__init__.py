@@ -9,7 +9,7 @@ from flask import Flask, redirect, render_template, request, url_for
 from . import db
 from .security import check_csrf, csrf_token
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 TAGLINE = "Your parts. Your datasheets. Your workbench."
 
 
