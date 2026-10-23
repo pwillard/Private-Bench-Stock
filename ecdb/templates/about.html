@@ -3,16 +3,9 @@
 {% block content %}
 <div class="about">
   <h1>What is ecDB?</h1>
-  <p>ecDB is a place where you, as an electronics hobbyist (or professional), keep your own database of
-  the components you own: where they are, how many you have, datasheets, pictures and which projects need them.</p>
-  <p>
-    <a href="{{ url_for('static', filename='img/index.png') }}"><img src="{{ url_for('static', filename='img/index_thumbnail.png') }}" alt="Component list (original version)"></a>
-    <a href="{{ url_for('static', filename='img/add.png') }}"><img src="{{ url_for('static', filename='img/add_thumbnail.png') }}" alt="Add component (original version)"></a>
-  </p>
-  <h2>Who & why?</h2>
-  <p>ecDB was created by <a href="http://nilsf.se" target="_blank" rel="noopener">Nils Fredriksson</a>
-  (<a href="https://github.com/ElectricMan/ecDB" target="_blank" rel="noopener">original PHP project</a>) and later revised by Pete Willard.</p>
+  <p>ecDB is a personal database of the electronic components you own: where they are, how many
+  you have, their datasheets and pictures, and which projects need them.</p>
   <h2>This version</h2>
-  <p>Version {{ version }} is a rewrite in Python (Flask) with an SQLite database, replacing the original PHP/MySQL code.</p>
+  <p>Version {{ version }}, by Pete Willard. Python (Flask) with an SQLite database.</p>
 </div>
 {% endblock %}
