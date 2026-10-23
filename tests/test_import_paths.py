@@ -76,7 +76,11 @@ def make_app(tmp_path):
 
 
 def count(path, table="component"):
-    return sqlite3.connect(path).execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+    con = sqlite3.connect(path)
+    try:
+        return con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+    finally:
+        con.close()
 
 
 def test_mysqldump_format(tmp_path):
