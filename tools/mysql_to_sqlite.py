@@ -15,7 +15,7 @@ data             -> component          (only the parts of ONE member, see below)
 projects         -> project
 projects_data    -> project_component
 members.currency -> setting "currency"
-members, members_stats: not imported (BenchStock has no user accounts)
+members, members_stats: not imported (Private Bench Stock has no user accounts)
 
 The old site was multi-user. The new one is a single-user tool, so only one
 member's parts and projects are imported: --owner ID, or by default the member

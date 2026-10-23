@@ -1,5 +1,5 @@
 [Unit]
-Description=Daily BenchStock database backup
+Description=Daily Private Bench Stock database backup
 
 [Service]
 Type=oneshot

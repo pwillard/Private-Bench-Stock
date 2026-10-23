@@ -2,7 +2,7 @@
 
 There are no logins (single-user tool on a home network), but every form still
 carries a token: otherwise any web page you visit could make your browser post
-"delete component" etc. to the BenchStock server behind your back."""
+"delete component" etc. to the Private Bench Stock server behind your back."""
 import hmac
 import secrets
 

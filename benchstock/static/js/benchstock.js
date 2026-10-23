@@ -1,4 +1,4 @@
-// BenchStock front-end helpers (no dependencies)
+// Private Bench Stock front-end helpers (no dependencies)
 (function () {
   "use strict";
 

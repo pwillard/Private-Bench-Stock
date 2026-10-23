@@ -1,5 +1,5 @@
 [Unit]
-Description=BenchStock electronic components database
+Description=Private Bench Stock electronic components database
 After=network.target
 
 [Service]

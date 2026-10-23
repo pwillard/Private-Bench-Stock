@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# BenchStock installer / updater for Raspberry Pi OS (or any Debian/Ubuntu with systemd).
+# Private Bench Stock installer / updater for Raspberry Pi OS (or any Debian/Ubuntu with systemd).
 #
 # Run from the unpacked app folder:
 #   sudo ./deploy/install_pi.sh [--dump /path/to/ecdb.sql] [--files /var/www/html] [--port 8080]
@@ -76,5 +76,5 @@ sleep 2
 systemctl --no-pager --lines=3 status benchstock || true
 
 echo
-echo "BenchStock is running: http://$(hostname -I | awk '{print $1}'):$PORT/"
+echo "Private Bench Stock is running: http://$(hostname -I | awk '{print $1}'):$PORT/"
 echo "Backup now:     cd $DEST && sudo -u benchstock .venv/bin/python manage.py backup"

@@ -1,4 +1,4 @@
-# BenchStock
+# Private Bench Stock
 
 *Your parts. Your datasheets. Your workbench.*
 

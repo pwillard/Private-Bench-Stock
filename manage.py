@@ -19,7 +19,7 @@ def serve(argv):
     ap.add_argument("--threads", type=int, default=4)
     a = ap.parse_args(argv)
     app = create_app()
-    print(f"BenchStock serving on http://{a.host}:{a.port}/  (database: {app.config['DATABASE']})")
+    print(f"Private Bench Stock serving on http://{a.host}:{a.port}/  (database: {app.config['DATABASE']})")
     waitress_serve(app, host=a.host, port=a.port, threads=a.threads,
                    max_request_body_size=app.config["MAX_CONTENT_LENGTH"])
 

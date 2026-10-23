@@ -1,4 +1,4 @@
-# Run BenchStock locally on Windows for testing.
+# Run Private Bench Stock locally on Windows for testing.
 #   .\run_local.ps1                       -> http://127.0.0.1:8080  (uses .\instance\benchstock.sqlite3)
 #   .\run_local.ps1 -Media C:\dev\claude\ecdb\html   (serve sheets/appnotes/img/parts from the old site folder)
 param(

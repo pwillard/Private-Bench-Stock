@@ -1,4 +1,4 @@
-"""BenchStock - electronic components database (Flask + SQLite, single user)."""
+"""Private Bench Stock - electronic components database (Flask + SQLite, single user)."""
 import datetime
 import os
 import secrets
