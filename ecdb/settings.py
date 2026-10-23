@@ -1,37 +1,30 @@
-from flask import Blueprint, current_app, flash, g, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 
-from .db import execute
-from .security import hash_password, login_required, verify_password
-from .validation import validate_profile
+from .db import execute, query
 
 bp = Blueprint("settings", __name__)
 
+DEFAULTS = {"currency": "USD"}
+
+
+def get_setting(key):
+    row = query("SELECT value FROM setting WHERE key = ?", (key,), one=True)
+    return row["value"] if row else DEFAULTS.get(key, "")
+
+
+def set_setting(key, value):
+    execute("INSERT INTO setting (key, value) VALUES (?, ?)"
+            " ON CONFLICT(key) DO UPDATE SET value = excluded.value", (key, value))
+
 
 @bp.route("/settings", methods=["GET", "POST"])
-@login_required
 def settings():
-    u = g.user
-    form = request.form if request.method == "POST" else {
-        "firstname": u["firstname"], "lastname": u["lastname"], "email": u["email"],
-        "measurement": str(u["measurement"]), "currency": u["currency"]}
     if request.method == "POST":
-        errors = validate_profile(form)
-        currency = form.get("currency", "USD")
+        currency = request.form.get("currency", "USD")
         if currency not in current_app.config["CURRENCIES"]:
-            errors.append("Unknown currency.")
-        newpass = form.get("newpass", "")
-        if newpass and not verify_password(u["password_hash"], form.get("oldpass", ""))[0]:
-            errors.append("Current password is wrong.")
-        if errors:
-            for e in errors:
-                flash(e, "error")
+            flash("Unknown currency.", "error")
         else:
-            execute("UPDATE user SET firstname = ?, lastname = ?, email = ?, measurement = ?, currency = ?"
-                    " WHERE id = ?",
-                    (form["firstname"].strip(), form["lastname"].strip(), form.get("email", "").strip(),
-                     1 if form.get("measurement") == "1" else 0, currency, u["id"]))
-            if newpass:
-                execute("UPDATE user SET password_hash = ? WHERE id = ?", (hash_password(newpass), u["id"]))
-            flash("Settings updated." + (" Password changed." if newpass else ""), "success")
-            return redirect(url_for(".settings"))
-    return render_template("settings.html", form=form)
+            set_setting("currency", currency)
+            flash("Settings updated.", "success")
+        return redirect(url_for(".settings"))
+    return render_template("settings.html")

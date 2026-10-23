@@ -54,7 +54,6 @@ code { font-size: 0.9em; background: #f0f1f3; padding: 0 4px; border-radius: 3px
   border-radius: 20px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.05);
 }
 #header .search input:focus { outline: none; border-color: var(--slate); box-shadow: 0 0 0 3px rgba(116,131,156,.2); }
-.userInfo { font-style: italic; display: flex; gap: 12px; align-items: center; white-space: nowrap; }
 .linkButton { background: none; border: 0; padding: 0; color: var(--link); font: inherit; cursor: pointer; }
 .linkButton:hover { text-decoration: underline; }
 

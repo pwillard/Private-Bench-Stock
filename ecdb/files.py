@@ -4,11 +4,10 @@ import csv
 import io
 import os
 
-from flask import (Blueprint, Response, abort, current_app, flash, g, redirect, render_template,
+from flask import (Blueprint, Response, current_app, flash, redirect, render_template,
                    request, send_from_directory, url_for)
 
 from .db import query
-from .security import login_required
 
 bp = Blueprint("files", __name__)
 
@@ -44,19 +43,16 @@ def _serve(config_key, filename):
 
 
 @bp.route("/sheets/<path:filename>")
-@login_required
 def sheet(filename):
     return _serve("SHEETS_DIR", filename)
 
 
 @bp.route("/appnotes/<path:filename>")
-@login_required
 def appnote(filename):
     return _serve("APPNOTES_DIR", filename)
 
 
 @bp.route("/img/parts/<path:filename>")
-@login_required
 def image(filename):
     return _serve("IMAGES_DIR", filename)
 
@@ -108,7 +104,6 @@ def save_upload(storage, as_appnote):
 
 
 @bp.route("/reference", methods=["GET", "POST"])
-@login_required
 def upload():
     if request.method == "POST":
         files = [f for f in request.files.getlist("file") if f and f.filename]
@@ -175,10 +170,8 @@ def audit_field(rows, field):
 
 
 @bp.route("/reference/audit")
-@login_required
 def audit():
-    rows = query("SELECT id, name, datasheet, appnote, image FROM component WHERE owner_id = ?"
-                 " ORDER BY name COLLATE NOCASE", (g.user["id"],))
+    rows = query("SELECT id, name, datasheet, appnote, image FROM component ORDER BY name COLLATE NOCASE")
     summaries, issues = [], []
     for field in FOLDERS:
         s, i = audit_field(rows, field)

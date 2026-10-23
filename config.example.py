@@ -13,9 +13,6 @@
 # APPNOTES_DIR = "/srv/ecdb/appnotes"
 # IMAGES_DIR = "/srv/ecdb/img/parts"
 
-# Allow new accounts from the web page (off: create users with "manage.py user-add")
-# ALLOW_REGISTRATION = False
-
 # Upload size limit in bytes
 # MAX_CONTENT_LENGTH = 150 * 1024 * 1024
 

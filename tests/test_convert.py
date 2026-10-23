@@ -32,17 +32,26 @@ def test_synthetic_dump(tmp_path):
     dump = tmp_path / "d.sql"
     dump.write_text(SAMPLE, encoding="utf-8")
     out = tmp_path / "o.sqlite3"
-    counts = convert(str(dump), str(out))
-    assert counts["component"] == 2 and counts["subcategory"] == 2 and counts["user"] == 1
+    counts = convert(str(dump), str(out))             # default owner = member with most parts (7)
+    assert counts["component"] == 2 and counts["subcategory"] == 2
     db = sqlite3.connect(out)
     c1 = db.execute("SELECT comment, price, pins, quantity, order_quantity, smd, location FROM component WHERE id=1").fetchone()
     assert c1 == ("line1\r\nline2 with 'quotes' and (parens), commas", 0.45, 3, 5, 0, 0, "Bin; A")
     c2 = db.execute("SELECT price, pins, quantity, smd, scrap FROM component WHERE id=2").fetchone()
     assert c2 == (None, None, 1.5, 1, 1)
-    assert db.execute("SELECT lastname, password_hash FROM user").fetchone() == \
-        ("O'Brien", "md5$5179b96aee89546ef7098194ba6d33c4")
+    assert db.execute("SELECT value FROM setting WHERE key='currency'").fetchone() == ("USD",)
+    assert "user" not in {r[0] for r in db.execute("SELECT name FROM sqlite_master")}
     with pytest.raises(SystemExit):
         convert(str(dump), str(out))                   # refuses to overwrite without --force
+
+
+def test_owner_option(tmp_path):
+    dump = tmp_path / "d.sql"
+    dump.write_text(SAMPLE, encoding="utf-8")
+    out = tmp_path / "o.sqlite3"
+    counts = convert(str(dump), str(out), owner=99)
+    assert counts["component"] == 1
+    assert sqlite3.connect(out).execute("SELECT name FROM component").fetchone() == ("Ghost",)
 
 
 @pytest.mark.skipif(not os.path.exists(REAL_DUMP), reason="real ecdb.sql not available")
@@ -51,7 +60,6 @@ def test_real_dump_row_counts_match(tmp_path):
     out = tmp_path / "real.sqlite3"
     counts = convert(REAL_DUMP, str(out))
     assert counts["component"] == len(src["data"])
-    assert counts["user"] == len(src["members"])
     db = sqlite3.connect(out)
     # spot-check every component's name and quantity round-trips
     rows = {r[0]: r[1:] for r in db.execute("SELECT id, name, quantity FROM component")}

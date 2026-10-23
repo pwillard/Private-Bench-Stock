@@ -1,8 +1,12 @@
 # ecDB 2 (Python/Flask + SQLite)
 
 A rewrite of the ecDB PHP/MySQL site, which lives in `..\html`. It keeps all of your data
-(parts, categories, projects, users), the datasheet, appnote and image folders, and the general
-look of the old site. There is no PHP and no MySQL server any more.
+(parts, categories, projects), the datasheet, appnote and image folders, and the general look of
+the old site. There is no PHP and no MySQL server any more.
+
+It is a single-user tool with no accounts and no login: anyone who can reach it on your
+network can use it. The user system in the old code was left over from the original author's
+plans for a public web service.
 
 ## What's in the box
 
@@ -22,7 +26,7 @@ Everything that belongs to *your* installation lives in `instance/`. Code update
     instance/media/sheets/         datasheets       (served at /sheets/...)
     instance/media/appnotes/       application notes (/appnotes/...)
     instance/media/img/parts/      part images       (/img/parts/...)
-    instance/secret_key            session signing key (auto-generated)
+    instance/secret_key            signs the form security tokens (auto-generated)
     instance/backups/              daily backups
 
 ## Install on the Raspberry Pi
@@ -41,8 +45,12 @@ Everything that belongs to *your* installation lives in `instance/`. Code update
 
    This sets up `/opt/ecdb`, a Python virtual environment, a locked-down `ecdb` service user,
    the `ecdb` systemd service (starts at boot) and a daily database backup timer.
-4. Open `http://<pi-address>:8080/`. Log in with your existing username and password.
-   Your old MD5 password hash is upgraded to a modern salted hash the first time you log in.
+4. Open `http://<pi-address>:8080/`.
+
+   The importer brings in the parts and projects of one old member (by default the one with
+   the most parts, i.e. you), plus that member's currency. Accounts are not imported. The
+   old `demo` account owned only an empty "Robot" project, so it is skipped and the import
+   report says so.
 
 To use port 80 instead, stop and disable Apache (`sudo systemctl disable --now apache2`), then
 re-run the installer with `--port 80`.
@@ -55,10 +63,6 @@ again, with no options. The database and files are kept.
 Run these on the Pi from `/opt/ecdb`, as the service user:
 
     cd /opt/ecdb
-    sudo -u ecdb .venv/bin/python manage.py user-list
-    sudo -u ecdb .venv/bin/python manage.py user-passwd pwillard     # reset a password
-    sudo -u ecdb .venv/bin/python manage.py user-add bob --first Bob --last Smith
-    sudo -u ecdb .venv/bin/python manage.py user-delete demo          # remove the old demo account
     sudo -u ecdb .venv/bin/python manage.py backup                    # manual backup
     sudo journalctl -u ecdb -f                                        # server log
 
@@ -92,8 +96,9 @@ The old `.php` addresses redirect automatically, so bookmarks keep working.
 
 Dropped: `test.php` (phpinfo), `oldcomponent.php`, `oldmaintenance.php`, `orig-maint.php`,
 `reports.php` (empty stub; replaced by **Export CSV**), and the public-site leftovers
-`terms.php` / `contact.php`. Public registration is off: create users with `user-add`, or set
-`ALLOW_REGISTRATION = True` in `instance/config.py`.
+`terms.php` / `contact.php`, and everything to do with accounts (login, logout, register, the
+user table and login history). The unused "measurement system" preference is gone too.
+`login.php` and `logout.php` just redirect to the component list.
 
 ## New compared to the PHP site
 
@@ -113,21 +118,22 @@ Dropped: `test.php` (phpinfo), `oldcomponent.php`, `oldmaintenance.php`, `orig-m
 
 ## Security changes
 
-- Passwords: salted hashes (PBKDF2/scrypt via Werkzeug) replace unsalted MD5. Old hashes are
-  upgraded when you log in.
+- No accounts, so no passwords to leak. The old MD5 password hashes are not carried over.
 - All SQL uses bound parameters. The old code built queries from strings and had injectable
   sort parameters.
 - All page output is HTML-escaped automatically, which stops stored XSS through names or comments.
-- Every form carries a CSRF token. Delete and +/- are POST-only.
-- Every component and project is checked against the logged-in owner. The old delete and
-  quantity actions didn't check.
-- Datasheets, appnotes and images are only served to logged-in users. Path traversal is blocked.
-- Login lockout: 5 failures locks that address for 5 minutes. Session cookies are HttpOnly and
-  SameSite. Security headers are set. No database password is stored anywhere.
+- Every form carries a CSRF token, and delete and +/- are POST-only. Without the token, any web
+  page you visit could make your browser send "delete" requests to the Pi.
+- File serving blocks path traversal. Uploads only accept PDF and image files, and never
+  overwrite.
+- Security headers are set. No database password is stored anywhere.
+- Access control is your network. To limit who can reach it, firewall port 8080 on the Pi
+  (e.g. `sudo ufw allow from 192.168.1.0/24 to any port 8080`), or change `--host 0.0.0.0`
+  to `--host 127.0.0.1` in `/etc/systemd/system/ecdb.service` to allow only the Pi itself.
 
 ## Development
 
     .venv\Scripts\python.exe -m pytest -q
 
-The tests cover every page, permissions, CSRF, upload rules, sorting and search injection,
+The tests cover every page, CSRF, upload rules, sorting and search injection,
 the converter (including your real `..\html\ecdb.sql` when present) and the old URL redirects.

@@ -44,7 +44,7 @@
     <legend>Stock</legend>
     <label class="short">Quantity <input name="quantity" value="{{ c.quantity|num }}" inputmode="decimal"></label>
     <label class="short">To order <input name="order_quantity" value="{{ c.order_quantity|num }}" inputmode="decimal"></label>
-    <label class="short">Price ({{ g.user.currency }}) <input name="price" value="{{ c.price|price }}" inputmode="decimal"></label>
+    <label class="short">Price ({{ currency }}) <input name="price" value="{{ c.price|price }}" inputmode="decimal"></label>
     <label>Location <input name="location" value="{{ c.location or '' }}" data-suggest="location"></label>
   </fieldset>
 

@@ -1,7 +1,7 @@
 """Entry points.
 
     python manage.py serve [--host 0.0.0.0] [--port 8080]   production server (waitress)
-    python manage.py <flask command>                         e.g. user-list, user-add, import-mysql
+    python manage.py <flask command>                         e.g. import-mysql, backup
 """
 import sys
 

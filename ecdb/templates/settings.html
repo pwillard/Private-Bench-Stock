@@ -6,29 +6,13 @@
 <form class="globalForms componentForm" method="post">
   {{ csrf() }}
   <fieldset>
-    <legend>Profile</legend>
-    <label>Username <input value="{{ g.user.login }}" disabled></label>
-    <label>First name <input name="firstname" value="{{ form.firstname }}" required></label>
-    <label>Last name <input name="lastname" value="{{ form.lastname }}" required></label>
-    <label>E-mail <input name="email" type="email" value="{{ form.email }}"></label>
-  </fieldset>
-  <fieldset>
     <legend>Preferences</legend>
-    <div class="radios"><span>Measurement</span>
-      <label><input type="radio" name="measurement" value="1" {{ 'checked' if form.measurement == '1' }}> Metric</label>
-      <label><input type="radio" name="measurement" value="0" {{ 'checked' if form.measurement != '1' }}> Imperial</label>
-    </div>
     <label class="short">Currency
       <select name="currency">
-        {% for cur in config.CURRENCIES %}<option {{ 'selected' if form.currency == cur }}>{{ cur }}</option>{% endfor %}
+        {% for cur in config.CURRENCIES %}<option {{ 'selected' if currency == cur }}>{{ cur }}</option>{% endfor %}
       </select></label>
-  </fieldset>
-  <fieldset>
-    <legend>Change password <span class="dim small">(leave empty to keep)</span></legend>
-    <label>Current password <input name="oldpass" type="password" autocomplete="current-password"></label>
-    <label>New password <input name="newpass" type="password" autocomplete="new-password" minlength="8"></label>
-    <label>Repeat new password <input name="confirmpass" type="password" autocomplete="new-password"></label>
   </fieldset>
   <div class="buttons"><button class="button green" type="submit"><span class="fa fa-save fa-lg"></span> Save</button></div>
 </form>
+<p><a class="button white" href="{{ url_for('components.export_csv') }}"><span class="fa fa-download"></span> Export all components (CSV)</a></p>
 {% endblock %}

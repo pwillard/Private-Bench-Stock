@@ -1,15 +1,15 @@
-"""ecDB - electronic components database (Flask + SQLite)."""
+"""ecDB - electronic components database (Flask + SQLite, single user)."""
 import datetime
 import os
 import secrets
 from pathlib import Path
 
-from flask import Flask, g, redirect, render_template, request, session, url_for
+from flask import Flask, redirect, render_template, request, url_for
 
 from . import db
 from .security import check_csrf, csrf_token
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 
 def _load_secret_key(instance_path):
@@ -31,11 +31,10 @@ def create_app(test_config=None):
         DATABASE=os.path.join(app.instance_path, "ecdb.sqlite3"),
         # Folder holding sheets/, appnotes/ and img/parts/ (same layout as the old site)
         MEDIA_ROOT=os.path.join(app.instance_path, "media"),
-        ALLOW_REGISTRATION=False,
         MAX_CONTENT_LENGTH=150 * 1024 * 1024,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
-        PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 14,
+        PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 365,
         CURRENCIES=["USD", "EUR", "GBP", "SEK", "CAD", "AUD"],
     )
     if test_config is None:
@@ -56,17 +55,11 @@ def create_app(test_config=None):
     if not os.path.exists(app.config["DATABASE"]):
         db.init_db(app.config["DATABASE"])
 
-    from . import auth, components, files, projects, settings
-    for bp in (auth.bp, components.bp, projects.bp, settings.bp, files.bp):
+    from . import components, files, projects, settings
+    for bp in (components.bp, projects.bp, settings.bp, files.bp):
         app.register_blueprint(bp)
 
-    @app.before_request
-    def load_user_and_check_csrf():
-        check_csrf()
-        uid = session.get("user_id")
-        g.user = db.query("SELECT * FROM user WHERE id = ?", (uid,), one=True) if uid else None
-        if uid and g.user is None:
-            session.clear()
+    app.before_request(check_csrf)
 
     @app.after_request
     def security_headers(resp):
@@ -77,22 +70,16 @@ def create_app(test_config=None):
 
     @app.context_processor
     def inject_globals():
-        stats = None
-        if g.get("user") is not None:
-            stats = db.query(
-                "SELECT (SELECT COUNT(*) FROM component WHERE owner_id = :u) AS components,"
-                " (SELECT COUNT(*) FROM project WHERE owner_id = :u) AS projects",
-                {"u": g.user["id"]}, one=True)
-        return {"stats": stats, "version": __version__,
-                "year": datetime.date.today().year,
-                "allow_registration": app.config["ALLOW_REGISTRATION"]}
+        stats = db.query("SELECT (SELECT COUNT(*) FROM component) AS components,"
+                         " (SELECT COUNT(*) FROM project) AS projects", one=True)
+        return {"stats": stats, "version": __version__, "year": datetime.date.today().year,
+                "currency": settings.get_setting("currency")}
 
     from .formatting import register_filters
     register_filters(app)
     app.jinja_env.globals["csrf_token"] = csrf_token
 
     @app.errorhandler(400)
-    @app.errorhandler(403)
     @app.errorhandler(404)
     def http_error(err):
         return render_template("error.html", error=err), err.code
@@ -110,8 +97,7 @@ def _register_legacy_redirects(app):
         "index.php": "components.index", "add.php": "components.add",
         "shoplist.php": "components.shoplist", "proj_list.php": "projects.list_projects",
         "my.php": "settings.settings", "maintenance.php": "files.upload",
-        "reference_audit.php": "files.audit", "login.php": "auth.login",
-        "logout.php": "auth.logout",
+        "reference_audit.php": "files.audit", "about.php": "components.about",
     }
 
     @app.route("/<page>.php")

@@ -77,4 +77,4 @@ systemctl --no-pager --lines=3 status ecdb || true
 
 echo
 echo "ecDB is running: http://$(hostname -I | awk '{print $1}'):$PORT/"
-echo "Users:          sudo -u ecdb $DEST/.venv/bin/python $DEST/manage.py user-list   (run from $DEST)"
+echo "Backup now:     cd $DEST && sudo -u ecdb .venv/bin/python manage.py backup"

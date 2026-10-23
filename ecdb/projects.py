@@ -1,8 +1,7 @@
-from flask import Blueprint, abort, flash, g, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
 from .components import BASE_SELECT
 from .db import execute, query
-from .security import login_required
 
 bp = Blueprint("projects", __name__, url_prefix="/projects")
 
@@ -14,21 +13,20 @@ PROJECT_SORTS = {
 
 
 def get_project(pid):
-    p = query("SELECT * FROM project WHERE id = ? AND owner_id = ?", (pid, g.user["id"]), one=True)
+    p = query("SELECT * FROM project WHERE id = ?", (pid,), one=True)
     if p is None:
         abort(404)
     return p
 
 
 @bp.route("/", methods=["GET", "POST"])
-@login_required
 def list_projects():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         if not name:
             flash("You have to specify a name.", "error")
         else:
-            pid = execute("INSERT INTO project (owner_id, name) VALUES (?, ?)", (g.user["id"], name))
+            pid = execute("INSERT INTO project (name) VALUES (?)", (name,))
             flash(f"Project {name} added.", "success")
             return redirect(url_for(".show", pid=pid))
     direction = "DESC" if request.args.get("order") == "desc" else "ASC"
@@ -38,13 +36,11 @@ def list_projects():
         " SUM(CASE WHEN c.quantity < pc.quantity THEN 1 ELSE 0 END) AS short"
         " FROM project p LEFT JOIN project_component pc ON pc.project_id = p.id"
         " LEFT JOIN component c ON c.id = pc.component_id"
-        f" WHERE p.owner_id = ? GROUP BY p.id ORDER BY p.name COLLATE NOCASE {direction}",
-        (g.user["id"],))
+        f" GROUP BY p.id ORDER BY p.name COLLATE NOCASE {direction}")
     return render_template("projects/list.html", projects=projects)
 
 
 @bp.route("/<int:pid>")
-@login_required
 def show(pid):
     project = get_project(pid)
     by = request.args.get("by", "name")
@@ -53,14 +49,12 @@ def show(pid):
     rows = query(
         BASE_SELECT.replace("SELECT c.*", "SELECT c.*, pc.quantity AS needed")
         + " JOIN project_component pc ON pc.component_id = c.id"
-        f" WHERE pc.project_id = ? AND c.owner_id = ? ORDER BY {order} {direction}, c.name COLLATE NOCASE",
-        (pid, g.user["id"]))
+        f" WHERE pc.project_id = ? ORDER BY {order} {direction}, c.name COLLATE NOCASE", (pid,))
     total = sum((r["price"] or 0) * r["needed"] for r in rows)
     return render_template("projects/show.html", project=project, rows=rows, total=total)
 
 
 @bp.route("/<int:pid>/rename", methods=["POST"])
-@login_required
 def rename(pid):
     get_project(pid)
     name = request.form.get("name", "").strip()
@@ -73,7 +67,6 @@ def rename(pid):
 
 
 @bp.route("/<int:pid>/delete", methods=["POST"])
-@login_required
 def delete(pid):
     p = get_project(pid)
     execute("DELETE FROM project WHERE id = ?", (pid,))
@@ -82,7 +75,6 @@ def delete(pid):
 
 
 @bp.route("/<int:pid>/remove/<int:cid>", methods=["POST"])
-@login_required
 def remove_component(pid, cid):
     get_project(pid)
     execute("DELETE FROM project_component WHERE project_id = ? AND component_id = ?", (pid, cid))
@@ -90,13 +82,12 @@ def remove_component(pid, cid):
 
 
 @bp.route("/<int:pid>/order-shortfall", methods=["POST"])
-@login_required
 def order_shortfall(pid):
     """Put every missing part of the project on the shopping list."""
     get_project(pid)
     rows = query("SELECT c.id, c.quantity, c.order_quantity, pc.quantity AS needed FROM component c"
                  " JOIN project_component pc ON pc.component_id = c.id"
-                 " WHERE pc.project_id = ? AND c.owner_id = ?", (pid, g.user["id"]))
+                 " WHERE pc.project_id = ?", (pid,))
     n = 0
     for r in rows:
         short = r["needed"] - r["quantity"]

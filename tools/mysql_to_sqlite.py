@@ -2,7 +2,7 @@
 """One-time converter: ecDB MySQL/phpMyAdmin dump (ecdb.sql) -> SQLite database.
 
 Usage:
-    python tools/mysql_to_sqlite.py <ecdb.sql> <output.sqlite3> [--force]
+    python tools/mysql_to_sqlite.py <ecdb.sql> <output.sqlite3> [--force] [--owner ID]
 
 Reads only the INSERT statements of the dump (no MySQL server needed), maps the
 old tables onto the new schema (ecdb/schema.sql) and prints a report of every
@@ -11,11 +11,15 @@ value it had to clean up. The source dump is never modified.
 Old table        -> new table
 category_head    -> category
 category_sub     -> subcategory   (category_id = id // 100)
-members          -> user          (MD5 password kept as "md5$<hash>", upgraded on next login)
-members_stats    -> login_log
-data             -> component
+data             -> component          (only the parts of ONE member, see below)
 projects         -> project
 projects_data    -> project_component
+members.currency -> setting "currency"
+members, members_stats: not imported (the new ecDB has no user accounts)
+
+The old site was multi-user. The new one is a single-user tool, so only one
+member's parts and projects are imported: --owner ID, or by default the member
+who owns the most parts. Parts of other members are listed in the report.
 """
 import argparse
 import os
@@ -124,7 +128,7 @@ def yes(value):
     return 1 if str(value).strip().lower() in ("yes", "1", "on", "true") else 0
 
 
-def convert(dump_path, out_path, force=False):
+def convert(dump_path, out_path, force=False, owner=None):
     if os.path.exists(out_path):
         if not force:
             sys.exit(f"{out_path} already exists (use --force to overwrite)")
@@ -150,39 +154,39 @@ def convert(dump_path, out_path, force=False):
                    (r["id"], head, r["name"]))
     sub_ids = {row[0] for row in db.execute("SELECT id FROM subcategory")}
 
-    # Users
-    for r in t.get("members", []):
-        db.execute(
-            "INSERT INTO user (id, login, firstname, lastname, email, password_hash, is_admin,"
-            " measurement, currency, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
-            (r["member_id"], r["login"], r["firstname"], r["lastname"], r["mail"],
-             "md5$" + r["passwd"].lower(), int(r.get("admin") or 0), int(r.get("measurement") or 0),
-             r.get("currency") or "USD", r.get("reg_date")))
-    user_ids = {row[0] for row in db.execute("SELECT id FROM user")}
-
-    for r in t.get("members_stats", []):
-        if r["members_stats_member"] in user_ids:
-            db.execute("INSERT INTO login_log (id, user_id, logged_at) VALUES (?,?,?)",
-                       (r["members_stats_id"], r["members_stats_member"], r["members_stats_time"]))
+    # Which member's inventory to import
+    members = {r["member_id"]: r for r in t.get("members", [])}
+    per_owner = {}
+    for r in t.get("data", []):
+        per_owner[r["owner"]] = per_owner.get(r["owner"], 0) + 1
+    if owner is None:
+        owner = max(per_owner, key=per_owner.get) if per_owner else None
+    elif owner not in per_owner and owner not in members:
+        sys.exit(f"member id {owner} has no parts and does not exist in the dump")
+    m = members.get(owner)
+    print(f"Importing parts of member {owner}"
+          + (f" ({m['login']}: {m['firstname']} {m['lastname']})" if m else ""))
+    for other, n in sorted(per_owner.items()):
+        if other != owner:
+            report(f"member {other}: {n} part(s) not imported (use --owner {other} to import those instead)")
+    if m and m.get("currency"):
+        db.execute("INSERT INTO setting (key, value) VALUES ('currency', ?)", (m["currency"],))
 
     # Components
-    skipped = 0
     for r in t.get("data", []):
-        cid = r["id"]
-        if r["owner"] not in user_ids:
-            report(f"component {cid} {r['name']!r}: owner {r['owner']} does not exist (skipped)")
-            skipped += 1
+        if r["owner"] != owner:
             continue
+        cid = r["id"]
         sub = num(r["category"], "category", cid, report, integer=True)
         if sub not in sub_ids:
             report(f"component {cid} {r['name']!r}: category {r['category']!r} unknown -> 1799 (Misc)")
             sub = 1799 if 1799 in sub_ids else min(sub_ids)
         db.execute(
-            "INSERT INTO component (id, owner_id, name, subcategory_id, manufacturer, package, pins,"
+            "INSERT INTO component (id, name, subcategory_id, manufacturer, package, pins,"
             " smd, scrap, quantity, order_quantity, price, location, datasheet, appnote, image, comment,"
             " created_at, updated_at)"   # the old site kept no dates: leave them blank
-            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'','')",
-            (cid, r["owner"], r["name"].strip(), sub, r["manufacturer"].strip(), r["package"].strip(),
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'','')",
+            (cid, r["name"].strip(), sub, r["manufacturer"].strip(), r["package"].strip(),
              num(r["pins"], "pins", cid, report, integer=True),
              yes(r["smd"]), yes(r["scrap"]),
              num(r["quantity"], "quantity", cid, report, empty=0),
@@ -194,23 +198,25 @@ def convert(dump_path, out_path, force=False):
 
     # Projects
     for r in t.get("projects", []):
-        if r["project_owner"] not in user_ids:
-            report(f"project {r['project_id']} {r['project_name']!r}: owner missing (skipped)")
+        if r["project_owner"] != owner:
+            report(f"project {r['project_id']} {r['project_name']!r}: belongs to member "
+                   f"{r['project_owner']} (not imported)")
             continue
-        db.execute("INSERT INTO project (id, owner_id, name) VALUES (?,?,?)",
-                   (r["project_id"], r["project_owner"], r["project_name"]))
+        db.execute("INSERT INTO project (id, name) VALUES (?,?)", (r["project_id"], r["project_name"]))
     proj_ids = {row[0] for row in db.execute("SELECT id FROM project")}
     for r in t.get("projects_data", []):
         pid, cid = r["projects_data_project_id"], r["projects_data_component_id"]
-        if pid not in proj_ids or cid not in comp_ids:
-            report(f"project link {r['projects_data_id']}: project {pid} / component {cid} missing (skipped)")
+        if pid not in proj_ids:
+            continue                      # project of another member: already reported
+        if cid not in comp_ids:
+            report(f"project link {r['projects_data_id']}: component {cid} missing (skipped)")
             continue
         db.execute("INSERT OR REPLACE INTO project_component (project_id, component_id, quantity)"
                    " VALUES (?,?,?)", (pid, cid, r["projects_data_quantity"]))
 
     db.commit()
     counts = {name: db.execute(f"SELECT COUNT(*) FROM {name}").fetchone()[0]
-              for name in ("category", "subcategory", "user", "login_log", "component",
+              for name in ("category", "subcategory", "setting", "component",
                            "project", "project_component")}
     db.close()
 
@@ -230,5 +236,6 @@ if __name__ == "__main__":
     ap.add_argument("dump")
     ap.add_argument("output")
     ap.add_argument("--force", action="store_true", help="overwrite an existing output database")
+    ap.add_argument("--owner", type=int, help="member id to import (default: the one with most parts)")
     a = ap.parse_args()
-    convert(a.dump, a.output, a.force)
+    convert(a.dump, a.output, a.force, a.owner)

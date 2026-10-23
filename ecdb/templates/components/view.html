@@ -22,7 +22,7 @@
       <tr><th>Quantity</th><td><span class="big {{ 'zero' if not c.quantity }}">{{ c.quantity|num }}</span> {{ qty_buttons(c, 'quantity', request.path) }}</td>
           <th>To order</th><td><span class="big">{{ c.order_quantity|num }}</span> {{ qty_buttons(c, 'order_quantity', request.path) }}</td></tr>
       <tr><th>Location</th><td>{{ dash(c.location) }}</td>
-          <th>Price</th><td>{% if c.price is not none %}{{ c.price|price }} {{ g.user.currency }}{% else %}<span class="dim">–</span>{% endif %}</td></tr>
+          <th>Price</th><td>{% if c.price is not none %}{{ c.price|price }} {{ currency }}{% else %}<span class="dim">–</span>{% endif %}</td></tr>
       <tr><th>Manufacturer</th><td>{{ dash(c.manufacturer) }}</td>
           <th>Package</th><td>{{ dash(c.package) }}</td></tr>
       <tr><th>Pins</th><td>{{ dash(c.pins) }}</td>

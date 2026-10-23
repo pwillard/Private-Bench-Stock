@@ -14,26 +14,16 @@
 <div id="wrapper">
   <header id="header">
     <a class="logo" href="{{ url_for('components.index') }}"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="ecDB"></a>
-    {% if g.user %}
     <form class="search" action="{{ url_for('components.search') }}" method="get" role="search">
       <span class="fa fa-search"></span>
       <input type="search" name="q" value="{{ q or '' }}" placeholder="Search components…" accesskey="s"
              {% block search_autofocus %}{% endblock %}>
     </form>
-    <div class="userInfo">
-      <a href="{{ url_for('settings.settings') }}"><span class="fa fa-user"></span> {{ g.user.firstname }} {{ g.user.lastname }}</a>
-      <form method="post" action="{{ url_for('auth.logout') }}" class="inline">
-        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-        <button class="linkButton" type="submit"><span class="fa fa-sign-out"></span> Sign out</button>
-      </form>
-    </div>
-    {% endif %}
   </header>
 
   {% set ep = request.endpoint or '' %}
   <nav id="menu">
     <ul>
-    {% if g.user %}
       <li><a href="{{ url_for('components.index') }}" class="{{ 'selected' if ep in ('components.index','components.category','components.subcategory','components.view','components.edit','components.search') }}"><span class="fa fa-archive fa-lg"></span> My components</a></li>
       <li><a href="{{ url_for('components.add') }}" class="{{ 'selected' if ep == 'components.add' }}"><span class="fa fa-plus-square fa-lg"></span> Add component</a></li>
       <li><a href="{{ url_for('components.shoplist') }}" class="{{ 'selected' if ep == 'components.shoplist' }}"><span class="fa fa-shopping-basket fa-lg"></span> Shopping list</a></li>
@@ -41,11 +31,6 @@
       <li><a href="{{ url_for('files.upload') }}" class="{{ 'selected' if ep == 'files.upload' }}"><span class="fa fa-cloud-upload fa-lg"></span> Reference files</a></li>
       <li><a href="{{ url_for('files.audit') }}" class="{{ 'selected' if ep == 'files.audit' }}"><span class="fa fa-check-square-o fa-lg"></span> Reference audit</a></li>
       <li><a href="{{ url_for('settings.settings') }}" class="{{ 'selected' if ep == 'settings.settings' }}"><span class="fa fa-cog fa-lg"></span> Settings</a></li>
-    {% else %}
-      <li><a href="{{ url_for('auth.login') }}" class="{{ 'selected' if ep == 'auth.login' }}"><span class="fa fa-key fa-lg"></span> Login</a></li>
-      {% if allow_registration %}<li><a href="{{ url_for('auth.register') }}" class="{{ 'selected' if ep == 'auth.register' }}"><span class="fa fa-user fa-lg"></span> Register</a></li>{% endif %}
-      <li><a href="{{ url_for('auth.about') }}" class="{{ 'selected' if ep == 'auth.about' }}"><span class="fa fa-info-circle fa-lg"></span> About</a></li>
-    {% endif %}
     </ul>
   </nav>
 
@@ -59,8 +44,8 @@
   </main>
 
   <footer id="copyText">
-    <div>© 2010–{{ year }} ecDB · created by Nils Fredriksson, revised by Pete Willard · v{{ version }} · <a href="{{ url_for('auth.about') }}">About</a></div>
-    {% if stats %}<div class="stats"><b>{{ stats.components }}</b> components and <b>{{ stats.projects }}</b> projects</div>{% endif %}
+    <div>© 2010–{{ year }} ecDB · created by Nils Fredriksson, revised by Pete Willard · v{{ version }} · <a href="{{ url_for('components.about') }}">About</a></div>
+    <div class="stats"><b>{{ stats.components }}</b> components and <b>{{ stats.projects }}</b> projects</div>
   </footer>
 </div>
 </body>

@@ -1,7 +1,4 @@
 """Form parsing/validation shared by the add/edit/clone pages and settings."""
-import re
-
-EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 COMMENT_MAX = 2500
 
 
@@ -84,20 +81,3 @@ def parse_component(form, subcategory_ids, project_ids):
                 project_edits[int(p)] = parse_number(form[key], "Project quantity", errors) or 0
     return v, project_add, project_edits, errors
 
-
-def validate_profile(form, require_password=False):
-    errors = []
-    if len(form.get("firstname", "").strip()) < 2:
-        errors.append("First name needs at least 2 characters.")
-    if len(form.get("lastname", "").strip()) < 2:
-        errors.append("Last name needs at least 2 characters.")
-    email = form.get("email", "").strip()
-    if email and not EMAIL_RE.match(email):
-        errors.append("Invalid e-mail address.")
-    newpass = form.get("newpass", "")
-    if require_password or newpass:
-        if len(newpass) < 8:
-            errors.append("Password needs at least 8 characters.")
-        elif newpass != form.get("confirmpass", ""):
-            errors.append("Passwords do not match.")
-    return errors
