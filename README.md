@@ -57,8 +57,21 @@ Everything that belongs to *your* installation lives in `instance/`. Code update
 To use port 80 instead, stop and disable Apache (`sudo systemctl disable --now apache2`), then
 re-run the installer with `--port 80`.
 
-**Updating** later: copy the new `app` folder over and run `sudo bash deploy/install_pi.sh`
-again, with no options. The database and files are kept.
+**Updating** later: copy the new `app` folder to a separate folder on the Pi (e.g. `~/benchstock-new`,
+not `/opt/benchstock` itself) and run `sudo bash deploy/install_pi.sh` from there, with no options.
+The database and files are kept.
+
+**Re-importing** the old dump by hand:
+
+    sudo systemctl stop benchstock
+    cd /opt/benchstock
+    sudo .venv/bin/python manage.py import-mysql /path/to/ecdb.sql      # add --force if the database already has parts
+    sudo chown -R benchstock:benchstock instance
+    sudo systemctl start benchstock
+
+Both phpMyAdmin exports and plain `mysqldump` files work. An empty database (the app creates one
+at first start) is replaced automatically. A dump that contains no parts is rejected, and the
+existing database is left unchanged.
 
 ## Admin commands
 

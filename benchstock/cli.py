@@ -23,10 +23,28 @@ def register_cli(app):
     @click.option("--owner", type=int, default=None,
                   help="Member id whose parts to import (default: the one with the most parts).")
     def import_mysql(dump, force, owner):
-        """Convert the old ecdb.sql MySQL dump into the SQLite database."""
+        """Convert the old ecdb.sql MySQL dump into the SQLite database.
+
+        Stop the service first (sudo systemctl stop benchstock). An existing
+        database that has no parts yet is replaced automatically; one with parts
+        needs --force (make a backup first)."""
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "tools"))
         from mysql_to_sqlite import convert
-        convert(dump, current_app.config["DATABASE"], force, owner)
+        path = current_app.config["DATABASE"]
+        if os.path.exists(path) and not force:
+            con = sqlite3.connect(path)
+            try:
+                n = con.execute("SELECT COUNT(*) FROM component").fetchone()[0]
+            except sqlite3.Error:
+                n = 0
+            con.close()
+            if n:
+                raise click.ClickException(
+                    f"{path} already holds {n} components. Use --force to replace it "
+                    "(run 'manage.py backup' first).")
+            force = True                       # empty database (e.g. created at first start): replace
+        convert(dump, path, force, owner)
+        click.echo(f"Database written: {path}")
 
     @app.cli.command("backup")
     @click.argument("dest_dir", type=click.Path(file_okay=False), default=None, required=False)

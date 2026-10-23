@@ -43,11 +43,11 @@ echo "== Python environment"
 "$DEST/.venv/bin/pip" install --quiet -r "$DEST/requirements.txt"
 
 if [ -n "$DUMP" ]; then
-  if [ -f "$DEST/instance/benchstock.sqlite3" ]; then
-    echo "!! $DEST/instance/benchstock.sqlite3 already exists - not importing (delete it first to re-import)."
-  else
-    echo "== Importing $DUMP"
-    (cd "$DEST" && .venv/bin/python manage.py import-mysql "$DUMP")
+  echo "== Importing $DUMP"
+  systemctl stop benchstock 2>/dev/null || true
+  # import-mysql replaces an empty database, but refuses one that already has parts
+  if ! (cd "$DEST" && .venv/bin/python manage.py import-mysql "$DUMP"); then
+    echo "!! Import did not run - see the message above. The existing database was left as it was."
   fi
 fi
 

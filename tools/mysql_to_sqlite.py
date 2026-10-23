@@ -30,7 +30,9 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCHEMA = os.path.join(HERE, "..", "benchstock", "schema.sql")
 
-INSERT_RE = re.compile(r"INSERT INTO `(\w+)` \(([^)]*)\) VALUES\s*", re.I)
+INSERT_RE = re.compile(r"INSERT\s+(?:IGNORE\s+)?INTO\s+`(\w+)`\s*(?:\(([^)]*)\))?\s*VALUES\s*", re.I)
+CREATE_RE = re.compile(r"CREATE TABLE(?: IF NOT EXISTS)?\s+`(\w+)`\s*\((.*?)\n\)", re.I | re.S)
+COLUMN_RE = re.compile(r"^\s*`(\w+)`", re.M)
 ESCAPES = {"0": "\0", "n": "\n", "r": "\r", "t": "\t", "Z": "\x1a", "b": "\b"}
 
 
@@ -85,13 +87,35 @@ def parse_values(text, pos):
     return rows, pos
 
 
+def read_text(path):
+    """Read the dump whatever the encoding: UTF-8 (with/without BOM), or the UTF-16
+    that Windows PowerShell writes for `mysqldump ... > file`."""
+    raw = open(path, "rb").read()
+    if raw[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        return raw.decode("utf-16")
+    if raw[:3] == b"\xef\xbb\xbf":
+        raw = raw[3:]
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return raw.decode("latin-1")
+
+
 def read_dump(path):
-    with open(path, encoding="utf-8") as f:
-        text = f.read()
+    """Handles both phpMyAdmin style (INSERT INTO `t` (cols) VALUES ...) and plain
+    mysqldump style (INSERT INTO `t` VALUES ...; column order from CREATE TABLE)."""
+    text = read_text(path)
+    table_cols = {m.group(1): COLUMN_RE.findall(m.group(2)) for m in CREATE_RE.finditer(text)}
     tables = {}
     for m in INSERT_RE.finditer(text):
         name = m.group(1)
-        cols = [c.strip().strip("`") for c in m.group(2).split(",")]
+        if m.group(2):
+            cols = [c.strip().strip("`") for c in m.group(2).split(",")]
+        elif name in table_cols:
+            cols = table_cols[name]
+        else:
+            raise SystemExit(f"Dump has INSERTs for `{name}` without a column list and no CREATE TABLE "
+                             "to take the column order from.")
         rows, _ = parse_values(text, m.end())
         tables.setdefault(name, []).extend(dict(zip(cols, r)) for r in rows)
     return tables
@@ -129,12 +153,13 @@ def yes(value):
 
 
 def convert(dump_path, out_path, force=False, owner=None):
-    if os.path.exists(out_path):
-        if not force:
-            sys.exit(f"{out_path} already exists (use --force to overwrite)")
-        os.remove(out_path)
+    if os.path.exists(out_path) and not force:
+        sys.exit(f"{out_path} already exists (use --force to overwrite)")
 
-    t = read_dump(dump_path)
+    t = read_dump(dump_path)               # parse first: a bad dump never touches the database
+    final_path, out_path = out_path, out_path + ".importing"
+    if os.path.exists(out_path):
+        os.remove(out_path)
     report = Report()
     db = sqlite3.connect(out_path)
     db.execute("PRAGMA foreign_keys = ON")
@@ -219,6 +244,15 @@ def convert(dump_path, out_path, force=False, owner=None):
               for name in ("category", "subcategory", "setting", "component",
                            "project", "project_component")}
     db.close()
+
+    if counts["component"] == 0 or counts["subcategory"] == 0:
+        os.remove(out_path)
+        sys.exit("Import aborted: no parts/categories found in the dump - the existing database was NOT changed.\n"
+                 f"Tables found in the dump: {sorted(t) or 'none'}")
+    for suffix in ("-wal", "-shm"):             # stale journal files of the database being replaced
+        if os.path.exists(final_path + suffix):
+            os.remove(final_path + suffix)
+    os.replace(out_path, final_path)
 
     print("Source rows:", {k: len(v) for k, v in t.items()})
     print("Imported   :", counts)
