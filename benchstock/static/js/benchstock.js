@@ -8,13 +8,51 @@
     if (msg && !window.confirm(msg)) e.preventDefault();
   });
 
-  // Image hover previews: load the picture only when first hovered
+  // Hover popups (image preview, comment). They are position:fixed and placed here so they
+  // stay inside the window: to the right of the icon (or left if no room), and shifted up
+  // when the row is near the bottom. They never change the page size, so nothing jumps.
+  var POPUP = "a.thumbnail, td.comment";
+  var open = null;
+
+  function place(anchor, pop) {
+    var r = anchor.getBoundingClientRect(), m = 8;
+    var w = pop.offsetWidth, h = pop.offsetHeight;
+    var preferLeft = anchor.matches("td.comment");
+    var left = preferLeft ? r.left - w - m : r.right + m;
+    if (left + w > window.innerWidth - m) left = r.left - w - m;
+    if (left < m) left = Math.min(r.right + m, window.innerWidth - w - m);
+    var top = r.top - 10;
+    if (top + h > window.innerHeight - m) top = window.innerHeight - h - m;
+    pop.style.left = Math.max(m, left) + "px";
+    pop.style.top = Math.max(m, top) + "px";
+  }
+
+  function close() {
+    if (open) { open.pop.classList.remove("open"); open = null; }
+  }
+
   document.addEventListener("mouseover", function (e) {
-    var a = e.target.closest && e.target.closest("a.thumbnail");
-    if (!a) return;
-    var img = a.querySelector("img[data-src]");
-    if (img) { img.src = img.getAttribute("data-src"); img.removeAttribute("data-src"); }
+    var anchor = e.target.closest && e.target.closest(POPUP);
+    if (!anchor) return;
+    var pop = anchor.querySelector(".imgB, .commentText");
+    if (!pop || (open && open.pop === pop)) return;
+    close();
+    var img = pop.querySelector("img[data-src]");       // load the picture only when first hovered
+    if (img) {
+      img.addEventListener("load", function () { if (open && open.pop === pop) place(anchor, pop); });
+      img.src = img.getAttribute("data-src");
+      img.removeAttribute("data-src");
+    }
+    pop.classList.add("open");
+    open = { anchor: anchor, pop: pop };
+    place(anchor, pop);
   });
+
+  document.addEventListener("mouseout", function (e) {
+    if (open && !open.anchor.contains(e.relatedTarget)) close();
+  });
+  window.addEventListener("scroll", close, true);
+  window.addEventListener("resize", close);
 
   // Instant client-side filter for long tables:  <input class="tableFilter" data-table="id">
   document.querySelectorAll("input.tableFilter").forEach(function (input) {

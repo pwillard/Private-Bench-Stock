@@ -120,13 +120,13 @@ code { font-size: 0.9em; background: #f0f1f3; padding: 0 4px; border-radius: 3px
 .globalTables .fa-file-image-o { color: var(--slate); }
 
 /* hover previews */
-a.thumbnail { position: relative; }
-a.thumbnail .imgB { display: none; position: absolute; z-index: 20; left: 24px; top: -10px; background: #fff; padding: 6px; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 4px 14px rgba(0,0,0,.18); }
-a.thumbnail:hover .imgB { display: block; }
+/* Hover popups (image preview, comment): position:fixed and placed by benchstock.js so they
+   never stretch the table or open off-screen (they flip up/left near the window edges). */
+a.thumbnail .imgB, td.comment .commentText { display: none; position: fixed; z-index: 50; pointer-events: none; }
+a.thumbnail .imgB.open, td.comment .commentText.open { display: block; }
+a.thumbnail .imgB { background: #fff; padding: 6px; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 4px 14px rgba(0,0,0,.18); }
 a.thumbnail .imgB img { max-width: 260px; max-height: 260px; display: block; }
-td.comment { position: relative; }
-td.comment .commentText { display: none; position: absolute; z-index: 20; right: 30px; top: 0; width: 320px; text-align: left; white-space: pre-wrap; background: #fffdf0; border: 1px solid #e6dfb5; padding: 8px 10px; border-radius: var(--radius); box-shadow: 0 4px 14px rgba(0,0,0,.15); }
-td.comment:hover .commentText { display: block; }
+td.comment .commentText { width: 320px; max-height: 60vh; overflow: hidden; text-align: left; white-space: pre-wrap; background: #fffdf0; border: 1px solid #e6dfb5; padding: 8px 10px; border-radius: var(--radius); box-shadow: 0 4px 14px rgba(0,0,0,.15); }
 
 /* Messages */
 .message { padding: 10px 14px; border-radius: var(--radius); margin: 0 0 12px; border: 1px solid; }
